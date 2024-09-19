@@ -40,14 +40,11 @@ In contrast to Asymmetric Object Types, all documents inserted into a Couchbase 
 
 Couchbase Lite and App Service/Sync Gateway have a different [security model](https://docs.couchbase.com/sync-gateway/current/access-control-model.html) that handles what documents should be synced via documents being assigned to a [“channel”](https://docs.couchbase.com/sync-gateway/current/channels.html) and the [replication configuration](https://docs.couchbase.com/couchbase-lite/current/android/replication.html) to decide which documents in what scopes and collections should be synced vs stay internal to the local database on the device.
 
-
-
-
 ### Collection Types
 
-In Realm there are three major collection types:  RealmList, RealmSet, and RealmDictionary.  There is no direct comparison between Realm’s collection types and Couchbase Lite.  
+In Realm there are three major collection types:  RealmList, RealmSet, and RealmDictionary.  There is no direct comparison between Realm’s collection types and Couchbase Lite, however, Couchbase Lite supports storing both arrays and dictionaries in JSON documents.  
 
-Couchbase Lite does support querying the database and when returning results they come back in a ResultSet.  A result set can be iterated through and return the Result object, which can then be type-casted to a custom Object type defined in the application, or can be converted to JSON via the Result.toJSON function call. Once it’s a JSON string, any serialization library for the given platform can be used.
+Couchbase Lite supports querying the database and when returning results they come back in a ResultSet.  A result set can be iterated through and return the Result object, which can then be type-casted to a custom Object type defined in the application, or can be converted to JSON via the Result.toJSON function call. Once it’s a JSON string, any serialization library for the given platform can be used.
 
 The ResultSet documentation can be found here:
 - [ResultSet API - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/query-resultsets.html)
