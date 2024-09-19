@@ -8,7 +8,7 @@ The Atlas Device SDK can be thought of as an on-device ORM that creates an “ob
  
 ## Frozen Architecture
 
-Couchbase Lite doesn’t use the [frozen architecture](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/frozen-arch/) paradigms, which was created as a way to pass objects between threads safely.
+Couchbase Lite doesn’t use the [frozen architecture](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/frozen-arch/) paradigms, which the Atlas Device SDK uses as a way to pass objects between threads safely.
 
 For most applications given that Couchbase Lite’s database is a single file, it is recommended to run all database operations on a single thread (NOT THE UI Thread) and the Couchbase Lite SDK will handle doing the work it needs to on however threads it needs to do work for processes like replication.
 
