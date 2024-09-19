@@ -10,7 +10,7 @@ The Atlas Device SDK can be thought of as an on-device ORM that creates an “ob
 
 Couchbase Lite doesn’t use the [frozen architecture](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/frozen-arch/) paradigms, which the Atlas Device SDK uses as a way to pass objects between threads safely.
 
-For most applications given that Couchbase Lite’s database is a single file, it is recommended to run all database operations on a single thread (NOT THE UI Thread) and the Couchbase Lite SDK will handle doing the work it needs to on however threads it needs to do work for processes like replication.
+For most applications given that Couchbase Lite’s database is a single file, it is recommended to run all database operations on a single thread (NOT THE Main Thread) and the Couchbase Lite SDK will handle doing the work it needs to on however threads it needs to do work for processes like replication.
 
 **Example:  Couchbase Lite Query API with the Kotlin SDK**
 
@@ -32,19 +32,21 @@ Realm relies on the developer to define "[Realm objects](https://www.mongodb.com
 
 Couchbase Lite is flexible in that all data is stored in the database as a JSON document using the Document API.  You can use SQL++ Queries to get information from the database OR you can query the database using a documentId which can be similarly thought of as Realms “ObjectId”.
 
-When you embed documents in Realm you use the [EmbeddedRealmObject](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#define-an-embedded-object-type), whereas in Couchbase Lite we just think of embedded data as an embedded JSON document or dictionary.
+When you embed documents in Realm you use the [EmbeddedRealmObject](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#define-an-embedded-object-type), whereas in Couchbase Lite you can  think of embedded data as an embedded JSON document or dictionary.
 
 [Asymmetric Object Types](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#define-an-asymmetric-object-type) are unique to Realm and Atlas Device sync as a way to control insert-only documents.
 
 In contrast to Asymmetric Object Types, all documents inserted into a Couchbase Lite database are just a JSON document.  When you retrieve a document from the Couchbase Lite Database using the Collection API and provide a documentId, it’s a Document object (immutable) until you convert it to a MutableDocument which would then allow you to make changes to it.  
 
-Couchbase Lite and App Service/Sync Gateway have a different [security model](https://docs.couchbase.com/sync-gateway/current/access-control-model.html) that handles what documents should be synced via documents being assigned to a [“channel”](https://docs.couchbase.com/sync-gateway/current/channels.html) and the [replication configuration](https://docs.couchbase.com/couchbase-lite/current/android/replication.html) to decide which documents in what scopes and collections should be synced vs stay internal to the local database on the device.
+Couchbase Lite and App Service/Sync Gateway have a different [security model](https://docs.couchbase.com/sync-gateway/current/access-control-model.html) .  Document that should be synced are assigned to a [“channel”](https://docs.couchbase.com/sync-gateway/current/channels.html) and the [replication configuration](https://docs.couchbase.com/couchbase-lite/current/android/replication.html) to decide which documents in what scopes and collections should be synced vs stay internal to the local database on the device.
 
 ### Collection Types
 
 Realm supports three primary collection types: RealmList, RealmSet, and RealmDictionary. Each serves specific use cases for managing collections of objects in a database. Couchbase Lite, in contrast, does not have direct analogs to these collection types but instead supports flexible data structuring through JSON. This allows for storing arrays and dictionaries (akin to RealmList and RealmDictionary, respectively) directly within JSON documents.
 
-When querying data, Couchbase Lite retrieves results in a ResultSet, which can be iterated to extract individual Result objects. These results can then be directly cast to custom object types defined within the application, facilitating seamless integration with the app’s data architecture. Additionally, results can be converted into JSON strings using the Result.toJSON() function. This JSON data can subsequently be processed using any serialization library compatible with the platform in use, providing extensive flexibility for data manipulation and integration.
+When querying data, Couchbase Lite retrieves results in a ResultSet, which can be iterated to extract individual Result objects.  Results are, essentially, JSON documents and can be treated as Dictionaries, wrapped in application objects, or serialized to JSON. 
+
+These results can then be directly cast to custom object types defined within the application, facilitating seamless integration with the app’s data architecture. Additionally, results can be converted into JSON strings using the Result.toJSON() function. This JSON data can subsequently be processed using any serialization library compatible with the platform in use, providing extensive flexibility for data manipulation and integration.
 
 Couchbase Lite ResultSet Documentation:
 - [ResultSet API - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/query-resultsets.html)
@@ -66,7 +68,7 @@ Conversely, Couchbase Lite offers a more flexible data handling approach. All in
 ## Collections
 In Realm, objects are stored in collections based on the object type (all objects in a collection are of the same type) unless the developer is using the [Realm Unstructured](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#define-unstructured-data) data API (RealmAny).  Storing data in this way comes at a performance cost in Realm.
 
-Couchbase Lite supports Scopes and Collections for storing JSON documents.  A scope is a container of 1 or many Collections, up to 1,000 collections per scope.  Collections are a group of JSON documents, whose contents can be different (schema doesn’t have to be the same).  Storing documents with different schemas in the same Collection comes at no performance loss in Couchbase Lite and SQL++ has keywords to help you query for documents that are missing a property(field).
+Couchbase Lite supports Scopes and Collections for storing JSON documents.  A scope is a namespace that may contain up to 1,000 collections.  Collections are a group of JSON documents, whose contents can be different (schema doesn’t have to be the same).  Storing documents with different schemas in the same Collection comes at no performance loss in Couchbase Lite and SQL++ has keywords to help you query for documents that are missing a property(field).
 
 Couchbase Lite Scopes and Collections Documentation:
 - [Scopes - Collections API - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/scopes-collections-manage.html)
@@ -122,7 +124,7 @@ In Couchbase Lite a documentId can be any string value as long as it’s not nul
 ### Geospatial Types
 In the Atlas SDK, Geospatial data, or "geodata", specifies points and geometric objects on the Earth's surface.
 
-Couchbase Lite has no direct feature or support for Geospatial data types.  A developer would need to write custom code to handle any geospatial calculations such as querying the database for all documents from a certain distance of a given Geospatial location.
+Couchbase Lite has no direct feature or support for Geospatial data types.  A developer would need to write custom code to handle any geospatial calculations or look into 3rd party packages. 
 
 ### Property Annotations
 In Realm, property annotations play a critical role in defining the schema of objects. These annotations specify how objects should be stored in the database, including details on which fields are indexed, thereby enhancing query performance and ensuring data integrity.
@@ -175,7 +177,7 @@ Realm stores a binary-encoded version of every object and type in a single .real
 
 ### Couchbase Lite Database
 
-Couchbase Lite stores all JSON documents in a single database that is a filename with a cblite2 extension.  When you open a database a new one will be created if it doesn’t already exist on the disk.  The developer specifies the path to the database, or a default path is used by the SDK when no path is provided.
+Couchbase Lite stores all JSON documents in a single database that is a filename with a cblite2 extension.   When you open a database a new one will be created if it doesn’t already exist on the disk.  The developer specifies the path to the database, or a default path is used by the SDK when no path is provided.
 
 ### Opening a Realm
 To open a realm, you must provide a [RealmConfiguration](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/open-and-close-a-realm/#open-a-realm) object that defines the details of the realm.  This configuration is passed to the *Realm.open* function.  
@@ -235,7 +237,12 @@ Couchbase Lite Database Maintenance API Documentation:
 ### Add Initial Data to Realm
 Realm provides an [API](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/open-and-close-a-realm/#add-initial-data-to-realm) that facilitates the insertion of initial data into a Realm database at the time of its first opening.
 
-While there is no direct equivalent in Couchbase Lite, a similar outcome can be achieved through the use of a pre-built database. This approach enables the application to be loaded with data upfront, bypassing the need to sync data from App Services during the initial application launch. This significantly reduces the wait time for users upon their first installation and startup of the application. 
+While there is no direct equivalent in Couchbase Lite, a similar outcome can be achieved through the use of a pre-built database. This approach enables the application to be loaded with data upfront, bypassing the need to sync data from App Services during the initial application launch. This could significantly reduce the wait time for users upon their first installation and startup of the application. 
+
+>**NOTE**
+>
+>It is trivial to provide initial data, over the network, in the first sync of the Database collection(s) when the app launches. The only reason to provide an initial pre-built database is to save on network traffic, once.
+>
 
 Detailed guidance on implementing pre-built databases is available in Couchbase Lite’s documentation for each supported platform:
 - [Pre-build Database - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/prebuilt-database.html)
@@ -326,7 +333,7 @@ collection.save(mutableDocument);
 > You will always take a performance and memory hit depending on device constraints when serializing and deserializing objects to and from JSON strings.  If performance is a concern, it's best to use the Key Value pair approach when creating documents in Couchbase Lite.
 > 
 
-Couchbase Lite does provide a batch API to write multiple documents at once.  At the local level this operation is still transactional: no other Database instances, including ones managed by the replicator can make changes during the execution of the block, and other instances will not see partial changes. 
+Couchbase Lite does provide a Batch API to write multiple documents at once.  At the local level this operation is still transactional: no other Database instances, including ones managed by the replicator can make changes during the execution of the block, and other instances will not see partial changes. 
 
 An example of a inBatch transaction in Couchbase Lite:
 
