@@ -12,9 +12,13 @@ Couchbase Lite doesn’t use the [frozen architecture](https://www.mongodb.com/d
 
 For most applications given that Couchbase Lite’s database is a single file, it is recommended to run all database operations on a single thread (NOT THE UI Thread) and the Couchbase Lite SDK will handle doing the work it needs to on however threads it needs to do work for processes like replication.
 
-**Example:  Couchbase Lite Query API**
+**Example:  Couchbase Lite Query API with the Kotlin SDK**
 
-In Couchbase Lite, the Query API is designed to integrate seamlessly with platform-specific mechanisms for dealing with loading and saving data. For instance, when using the Couchbase Lite Kotlin SDK, the Coroutines and Flow APIs in Kotlin can be leveraged out of the box without any modifications. It is important to follow Android best practices for threading, especially when performing I/O operations. For example, it is recommended to use a single Dispatcher scope for database tasks, and Dispatchers.Main or ViewModelScope for UI-related tasks. Proper threading ensures efficient and responsive database interactions without blocking the UI thread.
+In Couchbase Lite, the Query API is designed to integrate seamlessly with platform-specific mechanisms for dealing with loading and saving data. For instance, when using the Couchbase Lite Kotlin SDK, the Coroutines and Flow APIs in Kotlin can be leveraged out of the box without any modifications. 
+
+It is important to follow Android best practices for threading, especially when performing I/O operations. For example, it is recommended to use a single Dispatcher scope for database tasks, and Dispatchers.Main or ViewModelScope for UI-related tasks. Proper threading ensures efficient and responsive database interactions without blocking the UI thread.
+
+
 
 ## Model Data/Object Store
 
@@ -26,7 +30,9 @@ When you embed documents in Realm you use the [EmbeddedRealmObject](https://www.
 
 [Asymmetric Object Types](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#define-an-asymmetric-object-type) are unique to Realm and Atlas Device sync as a way to control insert-only documents.
 
-All documents inserted into a Couchbase Lite database are a document.  When you retrieve a document from the Couchbase Lite Database, it’s a Document object (immutable) until you convert it to a MutableDocument which would then allow you to make changes to it.  Couchbase Lite and App Service/Sync Gateway have a different [security model](https://docs.couchbase.com/sync-gateway/current/access-control-model.html) that handles what documents should be synced via documents being assigned to a [“channel”](https://docs.couchbase.com/sync-gateway/current/channels.html) and the [replication configuration](https://docs.couchbase.com/couchbase-lite/current/android/replication.html) to decide which documents in what scopes and collections should be synced vs stay internal to the local database on the device.
+All documents inserted into a Couchbase Lite database are a document.  When you retrieve a document from the Couchbase Lite Database using the Collection API and provide a documentId, it’s a Document object (immutable) until you convert it to a MutableDocument which would then allow you to make changes to it.  
+
+Couchbase Lite and App Service/Sync Gateway have a different [security model](https://docs.couchbase.com/sync-gateway/current/access-control-model.html) that handles what documents should be synced via documents being assigned to a [“channel”](https://docs.couchbase.com/sync-gateway/current/channels.html) and the [replication configuration](https://docs.couchbase.com/couchbase-lite/current/android/replication.html) to decide which documents in what scopes and collections should be synced vs stay internal to the local database on the device.
 
 
 ### Realm Object Types
@@ -39,7 +45,20 @@ All documents inserted into a Couchbase Lite database are a document.  When you 
 
 ### Collection Types
 
-In Realm there are three major collection types:  RealmList, RealmSet, and RealmDictionary.  Given Realm’s ORM-like nature, this logically makes sense.  There is no direct comparison between Realm’s collection types and Couchbase Lite.  Couchbase Lite does support querying the database and when returning results they come back in a ResultSet.  A result set can be iterated through and return the Result object, which can then be type-casted to a custom Object type defined in the application, or can be converted to JSON via the Result.toJSON function call. Once it’s a JSON string, any serialization library for the given platform can be used.
+In Realm there are three major collection types:  RealmList, RealmSet, and RealmDictionary.  There is no direct comparison between Realm’s collection types and Couchbase Lite.  
+
+Couchbase Lite does support querying the database and when returning results they come back in a ResultSet.  A result set can be iterated through and return the Result object, which can then be type-casted to a custom Object type defined in the application, or can be converted to JSON via the Result.toJSON function call. Once it’s a JSON string, any serialization library for the given platform can be used.
+
+The ResultSet documentation can be found here:
+- [ResultSet API - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/query-resultsets.html)
+- [ResultSet API - Android-Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/query-resultsets.html)
+- [ResultSet API - C](https://docs.couchbase.com/couchbase-lite/current/c/query-resultsets.html)
+- [ResultSet API - Java](https://docs.couchbase.com/couchbase-lite/current/java/query-resultsets.html)
+- [ResultSet API - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/query-resultsets.html)
+- [ResultSet API - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/query-resultsets.html)
+- [ResultSet API - React Native](https://cbl-reactnative.dev/Queries/query-result-set)
+- [ResultSet API - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/query-resultsets.html)
+
 
 ### Summary
 
@@ -49,6 +68,16 @@ In summary, the developer has to do a lot of planning of what type of object the
 In Realm, objects are stored in collections based on the object type (all objects in a collection are of the same type) unless the developer is using the [Realm Unstructured](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#define-unstructured-data) data API (RealmAny).  Storing data in this way comes at a performance cost in Realm.
 
 Couchbase Lite supports Scopes and Collections for storing JSON documents.  A scope is a container of 1 or many Collections, up to 1,000 collections per scope.  Collections are a group of JSON documents, whose contents can be different (schema doesn’t have to be the same).  Storing documents with different schemas in the same Collection comes at no performance loss in Couchbase Lite and SQL++ has keywords to help you query for documents that are missing a property(field).
+
+The Scopes and Collections documentation for Couchbase Lite can be found here:
+- [Scopes - Collections API - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/scopes-collections-manage.html)
+- [Scopes - Collections API - Android-Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/scopes-collections-manage.html)
+- [Scopes - Collections API - C](https://docs.couchbase.com/couchbase-lite/current/c/scopes-collections-manage.html)
+- [Scopes - Collections API - Java](https://docs.couchbase.com/couchbase-lite/current/java/scopes-collections-manage.html)
+- [Scopes - Collections API - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/scopes-collections-manage.html)
+- [Scopes - Collections API - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/scopes-collections-manage.html)
+- [Scopes - Collections API - React Native](https://cbl-reactnative.dev/scopes-collections)
+- [Scopes - Collections API - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/scopes-collections-manage.html)
 
 ### Supported Data Types/Data Modeling
 In Realm each platform as a given set of supported Data Types:
@@ -75,8 +104,7 @@ On top of scalar types, Couchbase Lite also supports
 - Array - represents an ordered collection of objects
 - Blob - represents an arbitrary piece of binary data
 
-Couchbase Lite documentation per SDK can be found here:
-
+Couchbase Lite Data Types documentation can be found here:
 
 - [Android - Java](https://docs.couchbase.com/couchbase-lite/current/android/document.html#data-types)
 - [Android - Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/document.html#data-types)
@@ -90,14 +118,29 @@ Couchbase Lite documentation per SDK can be found here:
 ### ObjectId vs DocumentId
 
 Realm objects can use the [ObjectId](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/supported-types/#objectid) or [UUID](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/supported-types/#realmuuid) for unique identifiers for Realm objects.  The ObjectId is a 12-byte unique value that is [nullable](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/supported-types/#objectid), indexable, and used as a primary key.  
-
 In Couchbase Lite a documentId can be any string value as long as it’s not null.  A document created without an ID will always have a randomly generated UUID used for the documentId.
 
 ### Geospatial Types
 Couchbase Lite has no direct feature or support for Geospatial data types.  A developer would need to write custom code to handle any geospatial calculations such as querying the database for all documents from a certain distance of a given Geospatial location.
 
 ### Property Annotations
-Couchbase Lite has no direct feature or support for Property Annotations because documents are stored in JSON format, thus no need for them.  Indexes are created outside the storage API via the [Index API](https://docs.couchbase.com/couchbase-lite/current/android/indexing.html).
+ In realm, property annotations are used to define the schema of the object and how it should be stored in the database including which fields are indexed.
+ 
+Couchbase Lite has no direct feature or support for Property Annotations because documents are stored in JSON format, thus no need for them.
+
+In Couchbase Lite, Indexes are created outside the storage API via the Index API.
+
+Couchbase Lite documentation on the Index API can be found here:
+
+- [Indexing API - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/indexing.html)
+- [Indexing API - Android-Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/indexing.html)
+- [Indexing API - C](https://docs.couchbase.com/couchbase-lite/current/c/indexing.html)
+- [Indexing API - Java](https://docs.couchbase.com/couchbase-lite/current/java/indexing.html)
+- [Indexing API - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/indexing.html)
+- [Indexing API - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/indexing.html)
+- [Indexing API - React Native](https://cbl-reactnative.dev/indexes)
+- [Indexing API - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/indexing.html)
+
 
 ### Backlinks and Relationships
 In Realm a [backlink](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/supported-types/#backlinks) is an inverse, to-many relationship between objects.  Backlinks can not be null.  MongoDb specifically states they don’t use bridge tables or explicit joins to define relationships.   
@@ -105,6 +148,18 @@ In Realm a [backlink](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/
 In Couchbase Lite, a developer can use a document with a documentId of two different documents to bridge documents for a join, a documentId reference in another document to do a join (foreign key), or you can embed documents in other documents.  
 
 Embedded documents into other documents will always come at the cost of large documents.  When dealing with smaller documents, a relationship via documentId can be used.  Relationships between different documents are typically modeled using document IDs which can kind of be thought of as a foreign keys to represent links between documents. To infer relationships , you would need to use a reverse lookup mechanism by querying the database to find documents that reference a particular document using the SQL++ JOIN keyword.  By using Indexes on those fields, you don’t take a performance hit when running these kinds of queries.
+
+Couchbase Lite documentation on SQL++ JOIN keyboard can be found here:
+
+- [SQL++ JOIN - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/query-n1ql-mobile.html#lbl-join)
+- [SQL++ JOIN - Android-Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/query-n1ql-mobile.html#lbl-join)
+- [SQL++ JOIN - C](https://docs.couchbase.com/couchbase-lite/current/c/query-n1ql-mobile.html#lbl-join)
+- [SQL++ JOIN - Java](https://docs.couchbase.com/couchbase-lite/current/java/query-n1ql-mobile.html#lbl-join)
+- [SQL++ JOIN - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/query-n1ql-mobile.html#lbl-join)
+- [SQL++ JOIN - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/query-n1ql-mobile.html#lbl-join)
+- [SQL++ JOIN - React Native](https://cbl-reactnative.dev/Queries/sqlplusplus#join-clause)
+- [SQL++ JOIN - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/query-n1ql-mobile.html#lbl-join)
+
 
 ### Changes to Object Model (schema synchronization)
 Realms [documentation](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/change-an-object-model/) has a detailed explanation of when and when you don’t have to worry about schema changes that is out of the scope of this document.  
