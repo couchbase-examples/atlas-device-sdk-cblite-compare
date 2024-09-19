@@ -18,22 +18,9 @@ In Couchbase Lite, the Query API is designed to integrate seamlessly with platfo
 
 It is important to follow Android best practices for threading, especially when performing I/O operations. For example, it is recommended to use a single Dispatcher scope for database tasks, and Dispatchers.Main or ViewModelScope for UI-related tasks. Proper threading ensures efficient and responsive database interactions without blocking the UI thread.
 
-
-
 ## Model Data/Object Store
 
 Realm relies on the developer to define "[Realm objects](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#realm-objects)" or objects that are uniquely named that they can interact with Atlas Device and Device synchronization.  Couchbase Lite is flexible in that all data is stored in the database as a JSON document.  You can use SQL++ Queries to get information from the database OR you can query the database using a documentId which can be similarly thought of as Realms “ObjectId”.
-
-Couchbase Lite you save information to the database in a JSON Document.  Within Couchbase Lite there is the Document API that allows you to either set fields on a document to values (KV operations), or you can serialize an object down to JSON and then create the document based on the JSON values.  You can reverse take the document from JSON and then serialize it to an object.
-
-When you embed documents in Realm you use the [EmbeddedRealmObject](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#define-an-embedded-object-type), whereas in Couchbase Lite we just think of embedded data as an embedded document.
-
-[Asymmetric Object Types](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#define-an-asymmetric-object-type) are unique to Realm and Atlas Device sync as a way to control insert-only documents.
-
-All documents inserted into a Couchbase Lite database are a document.  When you retrieve a document from the Couchbase Lite Database using the Collection API and provide a documentId, it’s a Document object (immutable) until you convert it to a MutableDocument which would then allow you to make changes to it.  
-
-Couchbase Lite and App Service/Sync Gateway have a different [security model](https://docs.couchbase.com/sync-gateway/current/access-control-model.html) that handles what documents should be synced via documents being assigned to a [“channel”](https://docs.couchbase.com/sync-gateway/current/channels.html) and the [replication configuration](https://docs.couchbase.com/couchbase-lite/current/android/replication.html) to decide which documents in what scopes and collections should be synced vs stay internal to the local database on the device.
-
 
 ### Realm Object Types
 
@@ -42,6 +29,19 @@ Couchbase Lite and App Service/Sync Gateway have a different [security model](ht
 | RealmObject | [Docs](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#realm-objects)                     |
 | EmbeddedRealmObject | [Docs](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#define-an-embedded-object-type)    |
 | AsymmetricRealmObject | [Docs](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#define-an-asymmetric-object-type) |
+
+Couchbase Lite you save information to the database in a JSON Document.  Within Couchbase Lite there is the Document API that allows you to either set fields on a document to values (KV operations), or you can serialize an object down to JSON and then create the document based on the JSON values.  You can reverse take the document from JSON and then serialize it to an object.
+
+When you embed documents in Realm you use the [EmbeddedRealmObject](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#define-an-embedded-object-type), whereas in Couchbase Lite we just think of embedded data as an embedded document.
+
+[Asymmetric Object Types](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#define-an-asymmetric-object-type) are unique to Realm and Atlas Device sync as a way to control insert-only documents.
+
+In contrast to Asymmetric Object Types, all documents inserted into a Couchbase Lite database are just a JSON document.  When you retrieve a document from the Couchbase Lite Database using the Collection API and provide a documentId, it’s a Document object (immutable) until you convert it to a MutableDocument which would then allow you to make changes to it.  
+
+Couchbase Lite and App Service/Sync Gateway have a different [security model](https://docs.couchbase.com/sync-gateway/current/access-control-model.html) that handles what documents should be synced via documents being assigned to a [“channel”](https://docs.couchbase.com/sync-gateway/current/channels.html) and the [replication configuration](https://docs.couchbase.com/couchbase-lite/current/android/replication.html) to decide which documents in what scopes and collections should be synced vs stay internal to the local database on the device.
+
+
+
 
 ### Collection Types
 
