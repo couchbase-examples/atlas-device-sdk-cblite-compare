@@ -557,3 +557,110 @@ println(retrievedFrog)
 
 Couchbase Lite uses the Documents and Blobs API to save information into a Couchbase Lite database.   Information can be saved using the MutableDocument class which allows for setting values via Key Value Pairs or via a JSON String.
 
+## Read Realm Objects in Realm vs Couchbase Lite
+
+### Read Operations
+
+A read operation in Atlas Device SDK consists of querying database objects, then running the query when you are ready to access the results.  This is based on the [RealmQuery API](https://www.mongodb.com/docs/realm-sdks/kotlin/latest/library-base/io.realm.kotlin.query/-realm-query/index.html) and Realm Query Language (RQL).
+
+An example of a query:
+```kotlin
+// Pass the object type as <T> parameter and filter by property
+val findFrogs = realm.query<Frog>("age > 1")
+    // Chain another query filter
+    .query("owner == $0 AND name CONTAINS $1", "Jim Henson", "K")
+    // Sort results by property
+    .sort("age", Sort.ASCENDING)
+    // Run the query
+    .find()
+// ... work with the results
+```
+
+Couchbase Lite can use SQL++ as its query language to achieve the same results.  An example of using the Couchbase Lite Query API:
+
+```kotlin
+ val sqlQuery = """
+        SELECT *
+        FROM scopeName.collectionName as Frog
+        WHERE age > 1
+        AND owner = "Jim Henson"
+        AND name LIKE "%K%"
+        ORDER BY age ASC
+    """.trimIndent()
+
+// Create a query from the N1QL string
+val query = database.createQuery(sqlQuery)
+
+// Execute the query and collect results
+val resultList = mutableListOf<Frog>()
+query.execute().forEach { result ->
+    val frogJson = result.getDictionary(0)?.toMap()?.let { Json.encodeToString(it) }
+      frogJson?.let {
+          val frog = Json.decodeFromString<Frog>(it)
+          resultList.add(frog)
+     }
+}
+```
+
+### Query All Objects of a Type
+In the Atlas SDK the query() function can be used to return all objects of a [specific type](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/crud/read/#query-all-objects-of-a-type).  
+
+In Couchbase Lite the recommended approach would be to store documents by type of information into unique collections, thus you can just query a collection to get all the documents of that type.  For example, you could store all Frogs in a scope called animals and a collection called frogs, thus getting all frogs back from the database is a SQL query.
+
+```sql
+SELECT * FROM animals.frogs as Frog
+```
+
+### Query a Single Object/Filter by Primary Key
+The first function on the query in the Atlas SDK can be used to return a single object of a specific type.  
+
+```kotlin
+val querySingleFrog = realm.query<Frog>().first()
+val singleFrog = querySingleFrog.find()
+if (singleFrog != null) {
+    println("${singleFrog.name} is a frog.")
+} else {
+    println("No frogs found.")
+}
+```
+
+Atlas also supports filtering objects by the PRIMARY_KEY_VALUE.  
+
+```kotlin
+val filterByPrimaryKey = realm.query<Frog>("_id == $0", PRIMARY_KEY_VALUE)
+val findPrimaryKey = filterByPrimaryKey.find().first()
+```
+
+In Couchbase Lite you have a few options for getting a single document of a given type back.  To start out  with, if you know the document ID of a given document, you can just call the collection’s document function to get the document by its ID.  
+
+```kotlin
+val document = collection.getDocument(mutableDocument);
+```
+
+If a developer didn’t know the documentId, they could use the LIMIT keyword in SQL++ to get a single document back from a given collection.
+
+```sql
+SELECT * FROM animals.frogs as Frog LIMIT 1
+```
+
+### Filter By Embedded Object Property
+
+To filter embedded documents in Atlas, you use the [dot notation](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/crud/read/#filter-by-embedded-object-property).
+
+```kotlin
+// Use dot notation to access the embedded object properties as if it
+// were in a regular nested object
+val filterEmbeddedObjectProperty =
+    realm.query<Contact>("address.street == '123 Pond St'")
+// You can also access properties nested within the embedded object
+val queryNestedProperty = realm.query<Contact>()
+    .query("address.propertyOwner.name == $0", "Mr. Frog")
+```
+
+In SQL++, you can also use dot notation to query fields of a sub-document.
+
+```sql
+SELECT * FROM exampleScope.Contact as contact WHERE address.street = '123 Pond St'
+
+SELECT * FROM exampleScope.Contact as contact WHERE address.propertyOwner.name = 'Mr. Frog'
+```
