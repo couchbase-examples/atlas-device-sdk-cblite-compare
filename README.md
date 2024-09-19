@@ -106,29 +106,30 @@ On top of scalar types, Couchbase Lite also supports
 
 Couchbase Lite Data Types documentation can be found here:
 
-- [Android - Java](https://docs.couchbase.com/couchbase-lite/current/android/document.html#data-types)
-- [Android - Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/document.html#data-types)
-- [C](https://docs.couchbase.com/couchbase-lite/current/c/document.html#data-types/)
-- [Java](https://docs.couchbase.com/couchbase-lite/current/java/document.html#data-types)
-- [.NET](https://docs.couchbase.com/couchbase-lite/current/csharp/document.html#data-typess)
-- [Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/document.html#data-types)
-- [React Native](https://cbl-reactnative.dev/documents#document-structure)
-- [Swift](https://docs.couchbase.com/couchbase-lite/current/swift/document.html#data-types)
+- [Data Types - Android - Java](https://docs.couchbase.com/couchbase-lite/current/android/document.html#data-types)
+- [Data Types - Android - Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/document.html#data-types)
+- [Data Types - C](https://docs.couchbase.com/couchbase-lite/current/c/document.html#data-types/)
+- [Data Types - Java](https://docs.couchbase.com/couchbase-lite/current/java/document.html#data-types)
+- [Data Types - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/document.html#data-typess)
+- [Data Types - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/document.html#data-types)
+- [Data Types - React Native](https://cbl-reactnative.dev/documents#document-structure)
+- [Data Types - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/document.html#data-types)
 
 ### ObjectId vs DocumentId
 
-Realm objects can use the [ObjectId](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/supported-types/#objectid) or [UUID](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/supported-types/#realmuuid) for unique identifiers for Realm objects.  The ObjectId is a 12-byte unique value that is [nullable](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/supported-types/#objectid), indexable, and used as a primary key.  
+Realm objects can use the [ObjectId](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/supported-types/#objectid) or [UUID](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/supported-types/#realmuuid) for unique identifiers for Realm objects.  The ObjectId is a 12-byte unique value that is [nullable](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/supported-types/#objectid), indexable, and used as a primary key.
+
 In Couchbase Lite a documentId can be any string value as long as it’s not null.  A document created without an ID will always have a randomly generated UUID used for the documentId.
 
 ### Geospatial Types
+In the Atlas SDK, Geospatial data, or "geodata", specifies points and geometric objects on the Earth's surface.
+
 Couchbase Lite has no direct feature or support for Geospatial data types.  A developer would need to write custom code to handle any geospatial calculations such as querying the database for all documents from a certain distance of a given Geospatial location.
 
 ### Property Annotations
  In realm, property annotations are used to define the schema of the object and how it should be stored in the database including which fields are indexed.
  
-Couchbase Lite has no direct feature or support for Property Annotations because documents are stored in JSON format, thus no need for them.
-
-In Couchbase Lite, Indexes are created outside the storage API via the Index API.
+Couchbase Lite has no direct feature or support for Property Annotations because documents are stored in JSON format. In Couchbase Lite, Indexes are created outside the storage API via the Index API.
 
 Couchbase Lite documentation on the Index API can be found here:
 
@@ -145,7 +146,7 @@ Couchbase Lite documentation on the Index API can be found here:
 ### Backlinks and Relationships
 In Realm a [backlink](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/supported-types/#backlinks) is an inverse, to-many relationship between objects.  Backlinks can not be null.  MongoDb specifically states they don’t use bridge tables or explicit joins to define relationships.   
 
-In Couchbase Lite, a developer can use a document with a documentId of two different documents to bridge documents for a join, a documentId reference in another document to do a join (foreign key), or you can embed documents in other documents.  
+In Couchbase Lite, you can embed documents into other documents, which simulates the same feature in Atlas Device SdK, OR a developer can use a document with a documentId of two different documents to bridge documents for a join, a documentId reference in another document to do a join (foreign key).
 
 Embedded documents into other documents will always come at the cost of large documents.  When dealing with smaller documents, a relationship via documentId can be used.  Relationships between different documents are typically modeled using document IDs which can kind of be thought of as a foreign keys to represent links between documents. To infer relationships , you would need to use a reverse lookup mechanism by querying the database to find documents that reference a particular document using the SQL++ JOIN keyword.  By using Indexes on those fields, you don’t take a performance hit when running these kinds of queries.
 
@@ -324,7 +325,7 @@ val mutableDocument = MutableDocument("doc-1", json)
 collection.save(mutableDocument);
 ```
 > **NOTE**
-> You will always take a small performance hit when serializing and deserializing objects to and from JSON.  If performance is a concern, it's best to use the Key Value pair approach when creating documents in Couchbase Lite.
+> You will always take a performance and memory hit depending on device constraints when serializing and deserializing objects to and from JSON strings.  If performance is a concern, it's best to use the Key Value pair approach when creating documents in Couchbase Lite.
 > 
 
 ### Create an Embedded Object
@@ -346,7 +347,7 @@ realm.write {
 }
 ```
 
-In Couchbase Lite, embedded objects are just embedded documents which you can use KV or the JSON serialization method.  An example of KV:
+In Couchbase Lite, embedded objects are just embedded dictionaries which you can use KV or the JSON serialization method.  An example of KV:
 ```kotlin
 val mdContact = MutableDictionary()
 mdContact.setString("name", "Mr. Frog")
@@ -406,10 +407,20 @@ val replicatorConfig = ReplicatorConfigurationFactory.newConfig(
 )
 ```
 
-### Create Realm Properties
-Realm properties allow you to define [Realm-specific types](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/crud/create/#:~:text=Realm%2Dspecific%20types.) to an object.  
+The Couchbase Lite Replicator Type Documentation can be found here:
+- [Replicator Sync Mode - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/replication.html#lbl-cfg-sync)
+- [Replicator Sync Mode - Android-Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/replication.html#lbl-cfg-sync)
+- [Replicator Sync Mode - C](https://docs.couchbase.com/couchbase-lite/current/c/replication.html#lbl-cfg-sync)
+- [Replicator Sync Mode - Java](https://docs.couchbase.com/couchbase-lite/current/java/replication.html#lbl-cfg-sync)
+- [Replicator Sync Mode - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/replication.html#lbl-cfg-sync)
+- [Replicator Sync Mode - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/replication.html#lbl-cfg-sync)
+- [Replicator Sync Mode - React Native](https://cbl-reactnative.dev/DataSync/remote-sync-gateway#sync-mode)
+- [Replicator Sync Mode - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/replication.html#lbl-cfg-sync)
 
-Couchbase Lite provides the equivalent with the MutableDocument API and types it supports.  Couchbase Lite’s documentation explains how to use MutableDocuments along with data in Dictionaries, Array’s and Blob’s.
+### Create Realm Properties
+Realm properties allow you to define [Realm-specific types](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/crud/create/#:~:text=Realm%2Dspecific%20types) to an object.  
+
+Couchbase Lite provides the MutableDocument API which allows you to map fields to the scalar types it supports.  Couchbase Lite’s documentation explains how to use MutableDocuments along with data in Dictionaries, Array’s and Blob’s.
 
 - [Document API - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/document.html)
 - [Document API - Android-Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/document.html)
@@ -488,7 +499,7 @@ When this data is synced to MongoDb Atlas, it would look something similar to th
 }
 ```
 
-To achieve the same results in Couchbase Lite, a developer would just make embedded documents. 
+To achieve the same results in Couchbase Lite, a developer would just make embedded JSON object or use the Key Value pair approach with dictionaries.  An example using serialization with an embedded JSON object is below: 
 
 ```kotlin
 // Define serializable data classes
