@@ -664,3 +664,103 @@ SELECT * FROM exampleScope.Contact as contact WHERE address.street = '123 Pond S
 
 SELECT * FROM exampleScope.Contact as contact WHERE address.propertyOwner.name = 'Mr. Frog'
 ```
+
+### Filter By RealmAny (Mixed) Property
+A [RealmAny (Mixed) property](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/crud/read/#filter-by-embedded-object-property) represents a polymorphic value that can hold any one of its supported data types at a particular moment. 
+
+
+```kotlin 
+val filterByRealmAnyInt = realm.query<Frog>("favoriteThing.@type == 'int'")
+val findFrog = filterByRealmAnyInt.find().first()
+```
+
+In Couchbase Lite, you can use [Type Check Functions](https://docs.couchbase.com/couchbase-lite/current/android/query-n1ql-mobile.html#lbl-func-typecheck) which can check a type and returns true if it matches and false if it doesn't match.
+
+```sql
+SELECT * FROM exampleScope.Frog as frog WHERE ISNUMBER(frog.favoriteThing)
+```
+
+### Filter by Full-Text Search (FTS)
+In the [Atlas Device SDK](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/crud/read/#filter-by-full-text-search--fts--property), you can filter any property that is annotated with the [@FullText](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/property-annotations/#std-label-kotlin-fts-index) annotation.  
+
+```kotlin
+// Filter by FTS property value using 'TEXT'
+// Find all frogs with "green" in the physical description
+val onlyGreenFrogs =
+    realm.query<Frog>("physicalDescription TEXT $0", "green").find()
+// Find all frogs with "green" but not "small" in the physical description
+val onlyBigGreenFrogs =
+    realm.query<Frog>("physicalDescription TEXT $0", "green -small").find()
+// Find all frogs with "muppet-" and "rain-" in the physical description
+val muppetsInTheRain =
+    realm.query<Frog>("physicalDescription TEXT $0", "muppet* rain*").find()
+```
+In Couchbase Lite, a Ful-Text Search index is created on a collection for the properties you would like to index.
+
+```kotlin
+val collection = database.getCollection("frogs", "animals")
+
+collection.createIndex("idxFrogPhysicalDescription",
+  FullTextIndexConfigurationFactory.newConfig
+  ("physicalDescription")) 
+    
+```
+Once the index is created you can use the SQL++ keyword MATCH OR RANK functions to query the collection using FTS
+ 
+```sql
+SELECT * FROM animals.frogs as frog 
+WHERE MATCH(frog.physicalDescription, 'green')
+```
+
+Couchbase Lite documentation on Full-Text Search indexes can be found here:
+
+- [Full-Text Search API - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/fts.html)
+- [Full-Text Search API - Android-Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/fts.html)
+- [Full-Text Search API - C](https://docs.couchbase.com/couchbase-lite/current/c/fts.html)
+- [Full-Text Search API - Java](https://docs.couchbase.com/couchbase-lite/current/java/fts.html)
+- [Full-Text Search API - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/fts.html)
+- [Full-Text Search API - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/fts.html)
+- [Full-Text Search API - React Native](https://cbl-reactnative.dev/full-text-search)
+- [Full-Text Search API - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/fts.html)
+
+### Sort and Limit Results
+In the Atlas SDK, you can sort and limit results using the sort(), limit(), and distinct() functions.
+
+```kotlin
+val organizedWithMethods = realm.query<Frog>("owner == $0", "Jim Henson")
+    .sort("age", Sort.DESCENDING)
+    .distinct("name")
+    .limit(2)
+    .find()
+organizedWithMethods.forEach { frog ->
+    Log.v("Method sort: ${frog.name} is ${frog.age}")
+}
+```
+
+In Couchbase Lite, you can use the SQL++ ORDER BY and LIMIT keywords to sort and limit results.
+
+```sql
+SELECT DISTINCT(*) FROM animals.frogs as frog WHERE frog.owner = 'Jim Henson' ORDER BY age DESC LIMIT 2
+```
+
+### Aggregate Results
+The Atlas Device SDK uses  RQL aggregate operators, one of the following convenience methods, or a combination of both:
+- max()
+- min()
+- sum()
+- count()
+
+In Couchbase Lite, SQL++ provides a plethora of aggregate operators and functions.  The Couchbase Lite guide to SQL++ for mobile developers can be found here:
+
+- [SQL++ for Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/query-n1ql-mobile.html)
+- [SQL++ for Android-Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/query-n1ql-mobile.html)
+- [SQL++ for C](https://docs.couchbase.com/couchbase-lite/current/c/query-n1ql-mobile.html)
+- [SQL++ for Java](https://docs.couchbase.com/couchbase-lite/current/java/query-n1ql-mobile.html)
+- [SQL++ for .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/query-n1ql-mobile.html)
+- [SQL++ for Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/query-n1ql-mobile.html)
+- [SQL++ for React Native](https://cbl-reactnative.dev/sqlplusplus)
+- [SQL++ for Swift](https://docs.couchbase.com/couchbase-lite/current/swift/query-n1ql-mobile.html)
+
+### Summary
+
+Couchbase Lite utilizes SQL++, an extension of the industry-standard SQL, to query information from its database, ensuring compatibility and ease of use with familiar syntax and robust capabilities. In contrast, the Atlas Device SDK relies on the Realm Query Language (RQL), a proprietary query language specific to Realm databases.
