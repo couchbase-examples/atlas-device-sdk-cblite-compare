@@ -1,7 +1,7 @@
 # Atlas Device SDK to Couchbase Lite Terminology and Technology comparison
 The Atlas Device SDK can be thought of as an on-device ORM that creates an “object store” that is then synced to MongoDb Atlas.  The following document describes the features of Atlas and how they compare to Couchbase Lite and Couchbase Capella App Services. 
 
-::note::
+[!NOTE]
 Links to the Atlas SDK are linked to the Kotlin SDK specifically.  The Atlas SDK is available in multiple languages and the documentation can be found [here](https://www.mongodb.com/docs/atlas/device-sdks/).
 
 ## Frozen Architecture
