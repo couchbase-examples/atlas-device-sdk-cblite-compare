@@ -293,7 +293,7 @@ Couchbase Lite Database Documentation:
 ## Create & Write Data in Realm vs Couchbase Lite
 
 ### Writing Data
-In Realm, you write data in a transaction which is a block of code that can do multiple transactions.  Either all the transactions succeed or they fail.   An example of this is below:
+In Realm, you write data in a transaction which is a block of code that can do multiple sub-transactions.  Either all the transactions succeed or they fail.   An example of this is below:
 ```kotlin
 // Open a write transaction
 realm.write {
