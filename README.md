@@ -177,7 +177,9 @@ Realm stores a binary-encoded version of every object and type in a single .real
 
 ### Couchbase Lite Database
 
-Couchbase Lite stores all JSON documents in a single database that is a filename with a cblite2 extension.   When you open a database a new one will be created if it doesn’t already exist on the disk.  The developer specifies the path to the database, or a default path is used by the SDK when no path is provided.
+Couchbase Lite stores all JSON documents in a single database that is a filename with a cblite2 extension (technically, if you were to look at the file on disk you would see it's a directory, but you should never mess with or attempt to open the files in the directory).   
+
+When you open a database a new cblite2 file will be created if it doesn’t already exist on the disk.  The developer specifies the path to the database, or a default path is used by the SDK when no path is provided.
 
 ### Opening a Realm
 To open a realm, you must provide a [RealmConfiguration](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/open-and-close-a-realm/#open-a-realm) object that defines the details of the realm.  This configuration is passed to the *Realm.open* function.  
@@ -210,6 +212,17 @@ val db = Database(
 )
 Log.v("Successfully opened database: ${db.name}")
 ```
+
+**Couchbase Lite Database Encryption Documentation**:
+- [Database Encryption - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/database.html#database-encryption)
+- [Database Encryption - Android-Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/database.html#database-encryption)
+- [Database Encryption - C](https://docs.couchbase.com/couchbase-lite/current/c/database.html#database-encryption)
+- [Database Encryption - Java](https://docs.couchbase.com/couchbase-lite/current/java/database.html#database-encryption)
+- [Database Encryption - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/database.html#database-encryption)
+- [Database Encryption - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/database.html#database-encryption)
+- [Database Encryption - React Native](https://cbl-reactnative.dev/databases#database-encryption)
+- [Database Encryption - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/database.html#database-encryption)
+
 
 ### In-Memory Realm
 In Realm, you can open a realm that is stored entirely [in memory](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/open-and-close-a-realm/#open-an-in-memory-realm).  When this option is used, no realm file is created.   
@@ -817,3 +830,196 @@ Couchbase Lite SQL++ for Mobile Developers Documentation:
 ### Summary
 
 Couchbase Lite utilizes SQL++, an extension of the industry-standard SQL, to query information from its database, ensuring compatibility and ease of use with familiar syntax and robust capabilities. In contrast, the Atlas Device SDK relies on the Realm Query Language (RQL), a proprietary query language specific to Realm databases.
+
+## Updating Realm Objects in Realm vs Couchbase Lite
+
+### Updating Realm Objects
+
+Realm supports update and upsert operations on Realm objects and embedded objects. An upsert operation either inserts a new instance of an object or updates an existing object that meets certain criteria.  The syntax to update an object in a realm is the same for a local or a synced realm. However, there are additional considerations that determine whether the write operation in a synced realm is successful.  Realm requires operations for updating are done in the realm.write or realm.writeBlocking transaction block.
+
+In Couchbase Lite updating a document is almost the same as workflow as creating a document.  You can use the MutableDocument API to update a document in a collection.  To update a document, you first retrieve the document from the collection, make the changes to the document, and then save the document back to the collection.  
+
+```kotlin
+val collection = database.getCollection("frogs", "animals")
+collection.getDocument("frogId::kermit")
+    .toMutable()
+    ?.let { mutableDocument ->
+        mutableDocument.setString("name", "Kermit the Frog")
+        collection.save(mutableDocument)
+    }
+```
+
+### Updating many documents
+
+As previously discussed, Couchbase Lite offers a robust [batch API](https://docs.couchbase.com/couchbase-lite/current/android/document.html#batch-operations) that enables the insertion or updating of multiple documents within a single transactional operation. This capability ensures atomicity at the local database level, meaning that no other Database instances, including those managed by the replicator, can modify the database during the execution of the transactional block. Additionally, other instances are prevented from observing any intermediate states of the transaction.
+
+However, it is important to recognize that Couchbase Mobile operates as part of a distributed system. Consequently, despite the transactional integrity maintained at the local database level, the asynchronous nature of the replication process does not guarantee simultaneous visibility of changes across Sync Gateway or other devices. 
+
+
+## Deleting Realm Objects in Realm vs Couchbase Lite
+
+### Deleting Realm Objects
+
+In Realm and the Atlas Device SDK you can choose to delete a single object, multiple objects, or all objects from the realm. After you delete an object, you can no longer access or modify it.
+
+```kotlin
+// Open a write transaction
+realm.write {
+    // Query the Frog type and filter by primary key value
+  val frogToDelete: Frog = query<Frog>("_id == $0", PRIMARY_KEY_VALUE)
+                              .find()
+                              .first()
+    // Pass the query results to delete()
+  delete(frogToDelete)
+}
+```
+
+In Couchbase Lite, the Collection's API provides a few different functions based on the developers need.  The first API is the Collection API delete document function. 
+
+```kotlin
+val collection = database.getCollection("frogs", "animals")
+collection.getDocument("frogId::kermit")
+    .let { 
+        collection.delete(it)
+    }
+```
+
+Optionally, when saving or deleting a document to the database you can pass in a concurrency control token. This is done by passing in the concurrency control token to the save or delete function.
+
+```kotlin
+val collection = database.getCollection("frogs", "animals")
+collection.getDocument("frogId::kermit")
+    .let { 
+        val didFailDelete = collection
+            .delete(it, 
+                    ConcurrencyControl.FAIL_ON_CONFLICT)
+    }
+```
+Note that when specifying the failOnConflict concurrency control, and conflict occurred, the delete operation will fail with 'false' value returned.   
+
+When calling the delete function, that deletion will propagate to the server and to all the other devices that sync with that database.  Calling delete is actually identical to saving a document with a body that is empty except for a single property "_deleted" set to true.
+
+### Purging a Document
+
+Couchbase Lite also provides another API to remove a document from the database.  This API is called purge.  Purging a document is more extreme than calling the delete API: it actually deletes the document and all its metadata. There’s nothing left to indicate the document ever existed.  For this reason, though, calling purge doesn’t replicate.  
+
+```kotlin
+val collection = database.getCollection("frogs", "animals")
+collection.getDocument("frogId::kermit")
+    .let { 
+        collection
+            .delete(it, 
+                    ConcurrencyControl.FAIL_ON_CONFLICT)
+    }
+```
+
+
+## Manging Realm Files vs Couchbase Lite Database
+
+### Reduce File Size
+
+Starting in version 1.6.0 of the Atlas Device SDK, realm automatically compacts Realm files in the background.  Automatic compaction begins when the size of unused space in the file is more than twice the size of user data in the file. Automatic compaction only takes place when the file is not being accessed.  
+
+Couchbase Lite also provides the Database Maintenance API that can provide several functions, including a compact function that shrinks the database file by removing any empty pages, and deletes blobs that are no longer referenced by any documents.
+
+
+```kotlin
+database.performMaintenance(DatabaseMaintenance.COMPACT) 
+```
+
+### Delete a Realm File
+
+To safely delete a realm file while the app is running, you can use the Realm.deleteRealm() method. The following code demonstrates this:
+```kotlin
+// You must close a realm before deleting it
+realm.close()
+// Delete the realm
+Realm.deleteRealm(config)
+```
+
+In Couchbase Lite, there is a function provided to delete a database.  Deleting a database will stop all replicators, live queries and all listeners attached to it. Although attempting to close a closed database is not an error, attempting to delete a closed database is.
+```kotlin
+database.delete()
+```
+##  React to Changes Realm vs Couchbase Lite 
+
+### Change Events 
+
+In Realm, you can subscribe to changes on the following [events](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/react-to-changes/):
+
+- [Query on collection](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/react-to-changes/#std-label-kotlin-query-change-listener)
+- [Realm object](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/react-to-changes/#std-label-kotlin-realm-object-change-listener)
+- [Realm collections](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/react-to-changes/#std-label-kotlin-realm-list-change-listener) (e.g list)
+
+The Atlas Device SDK only provides notifications for objects nested up to four layers deep. If you need to react to changes in more deeply-nested objects.
+
+Couchbase Lite provides change listeners for the following events:
+- **Query Listener (Live Query)**
+  - [Live Query - Android Java](https://docs.couchbase.com/couchbase-lite/current/android/query-live.html)
+  - [Live Query - Android Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/query-live.html#using-kotlin-flows-and-livedata)
+  - [Live Query - C](https://docs.couchbase.com/couchbase-lite/current/c/query-live.html)
+  - [Live Query - Java](https://docs.couchbase.com/couchbase-lite/current/java/query-live.html)
+  - [Live Query - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/query-live.html)
+  - [Live Query - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/query-live.html)
+  - [Live Query - React Native](https://cbl-reactnative.dev/Queries/live-queries)
+  - [Live Query - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/query-live.html)
+
+- **Document Listener**
+  - [Document Change - Android Java](https://docs.couchbase.com/couchbase-lite/current/android/document.html#document-change-events)
+  - [Document Change - Android Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/document.html#using-kotlin-flows-and-livedata)
+  - [Document Change - C](https://docs.couchbase.com/couchbase-lite/current/c/document.html#document-change-events)
+  - [Document Change - Java](https://docs.couchbase.com/couchbase-lite/current/java/document.html#document-change-events)
+  - [Document Change - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/document.html#document-change-events)
+  - [Document Change - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/document.html#document-change-events)
+  - [Document Change - React Native](https://cbl-reactnative.dev/documents#document-change-events)
+  - [Document Change - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/document.html#document-change-events)
+
+- **Collection Listener**
+    - [Collection Change - Android Java](https://docs.couchbase.com/mobile/3.2.0/couchbase-lite-android/com/couchbase/lite/CollectionChangeListener.html)
+    - [Collection Change - Android Kotlin](https://docs.couchbase.com/mobile/3.2.0/couchbase-lite-android/com/couchbase/lite/CollectionChangeListener.html)
+    - [Collection Change - C](https://docs.couchbase.com/mobile/3.2.0/couchbase-lite-c/C/html/group__collection.html)
+    - [Collection Change - Java](https://docs.couchbase.com/mobile/3.2.0/couchbase-lite-java/com/couchbase/lite/CollectionChangeListener.html)
+    - [Collection Change - .NET](https://docs.couchbase.com/mobile/3.2.0/couchbase-lite-net/api/Couchbase.Lite.Collection.html#Couchbase_Lite_Collection_AddChangeListener_System_EventHandler_Couchbase_Lite_CollectionChangedEventArgs__)
+    - [Collection Change - Objective-C](https://docs.couchbase.com/mobile/3.2.0/couchbase-lite-objc/Classes/CBLCollectionChange.html)
+    - [Collection Change - Swift](https://docs.couchbase.com/mobile/3.2.0/couchbase-lite-swift/Classes/Collection.html#/s:18CouchbaseLiteSwift10CollectionC17addChangeListener8listenerAA0G5TokenCyAA0dF0Vc_tF)
+- **Replication Status Listener**
+  - [Replicator Status Change - Android Java](https://docs.couchbase.com/couchbase-lite/current/android/replication.html#lbl-repl-status)
+  - [Replicator Status Change - Android Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/replication.html#lbl-repl-status)
+  - [Replicator Status Change - C](https://docs.couchbase.com/couchbase-lite/current/c/replication.html#lbl-repl-status)
+  - [Replicator Status Change - Java](https://docs.couchbase.com/couchbase-lite/current/java/replication.html#lbl-repl-status)
+  - [Replicator Status Change - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/replication.html#lbl-repl-status)
+  - [Replicator Status Change - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/replication.html#lbl-repl-status)
+  - [Replicator Status Change - React Native](https://cbl-reactnative.dev/DataSync/remote-sync-gateway#replicator-status)
+  - [Replicator Status Change - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/replication.html#lbl-repl-status)
+
+- **Replication Document Listener**
+    - [Replicator Document Change - Android Java](https://docs.couchbase.com/couchbase-lite/current/android/replication.html#lbl-repl-evnts)
+    - [Replicator Document Change - Android Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/replication.html#lbl-repl-evnts)
+    - [Replicator Document Change - C](https://docs.couchbase.com/couchbase-lite/current/c/replication.html#lbl-repl-evnts)
+    - [Replicator Document Change - Java](https://docs.couchbase.com/couchbase-lite/current/java/replication.html#lbl-repl-evnts)
+    - [Replicator Document Change - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/replication.html#lbl-repl-evnts)
+    - [Replicator Document Change - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/replication.html#lbl-repl-evnts)
+    - [Replicator Document Change - React Native](https://cbl-reactnative.dev/DataSync/remote-sync-gateway#monitor-document-changes)
+    - [Replicator Document Change - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/replication.html#lbl-repl-evnts)
+
+### Summary
+
+Couchbase Lite offers a suite of change listener APIs that enable developers to implement event-driven architectures by responding programmatically to modifications in collections, documents, queries, and the replication process. These event listeners facilitate real-time data handling by triggering callback functions when changes occur, thereby allowing applications to maintain up-to-date states and perform actions dynamically based on the nature of the data change observed.
+
+
+##  Logging in Realm vs Couchbase Lite
+
+### Logging 
+
+The [Atlas documentation](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/logging/) covers how to set log levels and custom logs to allow developers to troubleshoot errors. 
+
+Couchbase Lite provides the ability to set logging levels and domains along with supporting Console, File, and Custom logging.
+
+Couchbase Lite Logging Documentation:
+- [Logging - Android Java](https://docs.couchbase.com/couchbase-lite/current/android/troubleshooting-logs.html)
+- [Logging - Android Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/troubleshooting-logs.html)
+- [Logging - Java](https://docs.couchbase.com/couchbase-lite/current/java/troubleshooting-logs.html)
+- [Logging - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/troubleshooting-logs.html)
+- [Logging - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/troubleshooting-logs.html)
+- [Logging - React Native](https://cbl-reactnative.dev/Troubleshooting/using-logs)
+- [Logging - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/troubleshooting-logs.html)
