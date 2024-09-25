@@ -38,7 +38,9 @@ When you embed documents in Realm you use the [EmbeddedRealmObject](https://www.
 
 In contrast to Asymmetric Object Types, all documents inserted into a Couchbase Lite database are just a JSON document.  When you retrieve a document from the Couchbase Lite Database using the Collection API and provide a documentId, it’s a Document object (immutable) until you convert it to a MutableDocument which would then allow you to make changes to it.  
 
-Couchbase Lite and App Service/Sync Gateway have a different [security model](https://docs.couchbase.com/sync-gateway/current/access-control-model.html) .  Document that should be synced are assigned to a [“channel”](https://docs.couchbase.com/sync-gateway/current/channels.html) and the [replication configuration](https://docs.couchbase.com/couchbase-lite/current/android/replication.html) to decide which documents in what scopes and collections should be synced vs stay internal to the local database on the device.
+Couchbase Lite does provide a document purge API that is discussed later in this document which can be used to provide similar functionality to Asymmetric Object Types depending on the use case  
+
+Couchbase Lite and App Service/Sync Gateway have a different [security model](https://docs.couchbase.com/sync-gateway/current/access-control-model.html) .  Document that should be synced are assigned to a [“channel”](https://docs.couchbase.com/sync-gateway/current/channels.html) and the [replication configuration](https://docs.couchbase.com/couchbase-lite/current/android/replication.html) to decide which documents in what scopes and collections should be synced vs stay internal to the local database on the device.  This is covered more in details later in the document.
 
 ### Collection Types
 
@@ -1006,11 +1008,6 @@ Couchbase Lite provides change listeners for the following events:
 
 Couchbase Lite offers a suite of change listener APIs that enable developers to implement event-driven architectures by responding programmatically to modifications in collections, documents, queries, and the replication process. These event listeners facilitate real-time data handling by triggering callback functions when changes occur, thereby allowing applications to maintain up-to-date states and perform actions dynamically based on the nature of the data change observed.
 
-
-##  Logging in Realm vs Couchbase Lite
-
-
-
 ## Connecting to Atlas/Capella App Services 
 Each platform has a set of documentation that explains on how to connect to App Services and configuration of it.
 
@@ -1048,6 +1045,9 @@ For large scale deployments using an Authentication Provider that supports OpenI
 
 For applications that don't support OpenID Connect, REST APIs can be used to manage users, roles, and channels.  The REST API documentation can be found here:
 [Capella App Services - REST API Documentation](https://docs.couchbase.com/cloud/app-services/references/rest_api_admin.html#tag/Database-Security)
+
+### Configuration of the Replicator
+TODO
 
 ## Troubleshooting 
 
