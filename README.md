@@ -1009,9 +1009,51 @@ Couchbase Lite offers a suite of change listener APIs that enable developers to 
 
 ##  Logging in Realm vs Couchbase Lite
 
-### Logging 
 
-The [Atlas documentation](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/logging/) covers how to set log levels and custom logs to allow developers to troubleshoot errors. 
+
+## Connecting to Atlas/Capella App Services 
+Each platform has a set of documentation that explains on how to connect to App Services and configuration of it.
+
+**MongoDb Atlas**
+[App Services Connection Documentation](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/app-services/connect-to-app-services-backend/)
+[Managing Users](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/users/authenticate-users/)
+
+**Couchbase Capella**
+[App Services Connection Documentation](https://docs.couchbase.com/cloud/app-services/deployment/creating-an-app-service.html)
+[Managing Users](https://docs.couchbase.com/cloud/app-services/user-management/create-user.html)
+
+
+## Syncing Realm vs Couchbase Lite Sync with Capella App Services 
+From a high level both platforms can sync information from the device to the cloud via there respective App Services.  There are massive differences between Atlas App Services security model and Couchbase Capella's security model.  Before syncing data to the cloud, developers should review the following documentation.
+
+Couchbase Capella App Services is a service that automates and manages a cluster of Sync Gateway servers in the cloud that are  used to sync information between App Services and a Couchbase Capella Bucket.  Some documentation will need to be reviewed from the Sync Gateway documentation area of the docs while other information can be found in the Couchbase Capella App Services documentation. It's recommended that developers and architects understand Channels, Users, Roles, the Import Process, and the Sync Function that is used to set security on documents before attempting to configure Couchbase Capella App Services. 
+
+- [Sync Gateway - Access Control Concepts](https://docs.couchbase.com/sync-gateway/current/access-control-concepts.html)
+- [Sync Gateway - Channels](https://docs.couchbase.com/sync-gateway/current/channels.html)
+- [Sync Gateway - Roles](https://docs.couchbase.com/sync-gateway/current/roles.html)
+- [Sync Gateway - Users](https://docs.couchbase.com/sync-gateway/current/users.html)
+- [Sync Gateway - Import Process](https://docs.couchbase.com/sync-gateway/current/import-processing.html)
+- [Sync Gateway - Sync Function](https://docs.couchbase.com/sync-gateway/current/sync-function.html)
+- [Sync Gateway - Delta Sync](https://docs.couchbase.com/sync-gateway/current/delta-sync.html)
+-------
+- [App Services - Create App Endpoint](https://docs.couchbase.com/cloud/app-services/deployment/creating-an-app-endpoint.html)
+- [App Services - Configuring Access Control and Data Validation](https://docs.couchbase.com/cloud/app-services/deployment/access-control-data-validation.html)
+- [App Services - Connecting](https://docs.couchbase.com/cloud/app-services/connect/connect-apps-to-endpoint.html)
+- [App Services - Adding Security with Channels](https://docs.couchbase.com/cloud/app-services/channels/channels.html)
+- [App Services - Creating Roles](https://docs.couchbase.com/cloud/app-services/user-management/create-app-role.html)
+- [App Services - Creating Users](https://docs.couchbase.com/cloud/app-services/user-management/create-user.html)
+
+For large scale deployments using an Authentication Provider that supports OpenID Connect is a way easier way to manage users.
+- [App Services - Authentication Providers](https://docs.couchbase.com/cloud/app-services/user-management/set-up-authentication-provider.html)
+
+For applications that don't support OpenID Connect, REST APIs can be used to manage users, roles, and channels.  The REST API documentation can be found here:
+[Capella App Services - REST API Documentation](https://docs.couchbase.com/cloud/app-services/references/rest_api_admin.html#tag/Database-Security)
+
+## Troubleshooting 
+
+### Logging
+
+The [Atlas documentation](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/logging/) covers how to set log levels and custom logs to allow developers to troubleshoot errors.
 
 Couchbase Lite provides the ability to set logging levels and domains along with supporting Console, File, and Custom logging.
 
@@ -1023,3 +1065,26 @@ Couchbase Lite Logging Documentation:
 - [Logging - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/troubleshooting-logs.html)
 - [Logging - React Native](https://cbl-reactnative.dev/Troubleshooting/using-logs)
 - [Logging - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/troubleshooting-logs.html)
+
+### Handling Data Conflicts
+Document conflicts can occur if multiple changes are made to the same version of a document by multiple peers in a distributed system. For Couchbase Mobile, this can be a Couchbase Lite or App Services Endpoint.
+
+More information on how to handle data conflicts can be found below:
+- [Android Java](https://docs.couchbase.com/couchbase-lite/current/android/conflict.html)
+- [Android Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/conflict.html)
+- [C](https://docs.couchbase.com/couchbase-lite/current/c/conflict.html)
+- [Java](https://docs.couchbase.com/couchbase-lite/current/java/conflict.html)
+- [.NET](https://docs.couchbase.com/couchbase-lite/current/csharp/conflict.html)
+- [Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/conflict.html)
+- [Swift](https://docs.couchbase.com/couchbase-lite/current/swift/conflict.html)
+
+### Queries 
+The Couchbase Lite query API provides the Query Explain function that can be used to troubleshoot queries.
+
+- [Query Explain - Android Java](https://docs.couchbase.com/couchbase-lite/current/android/troubleshooting-queries.html)
+- [Query Explain - Android Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/troubleshooting-queries.html)
+- [Query Explain - Java](https://docs.couchbase.com/couchbase-lite/current/java/troubleshooting-queries.html)
+- [Query Explain - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/troubleshooting-queries.html)
+- [Query Explain - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/troubleshooting-queries.html)
+- [Query Explain - React Native](https://cbl-reactnative.dev/Troubleshooting/troubleshoot-queries)
+- [Query Explain - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/troubleshooting-queries.html)
