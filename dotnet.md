@@ -20,7 +20,8 @@ When you open a database a new cblite2 file will be created if it doesn’t alre
 
 #### Tools for viewing Database contents
 Couchbase Lite has a few ways to view the contents of a database file outside your application.
-The [JetBrains IDE Plugin for Rider](https://youtu.be/xCKhzo2jSv4?si=wHyjPra7F0XWccK2&t=270) for Couchbase has a data import feature to allow developers to migrate data from MongoDb Atlas to Couchbase Capella a one-time job.  This is designed for developers to quickly move data for setting up a development environment.
+
+- [JetBrains IDE Plugin for Rider](https://plugins.jetbrains.com/plugin/22131-couchbase)
 - [Visual Studio Code Plugin](https://marketplace.visualstudio.com/items?itemName=Couchbase.vscode-cblite)
 - [cblite Command Line Tool](https://github.com/couchbaselabs/couchbase-mobile-tools/blob/master/Documentation.md)
 
