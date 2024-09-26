@@ -1,11 +1,11 @@
 # Atlas Device SDK to Couchbase Lite Comparison Guide
-The Atlas Device SDK can be thought of as an on-device ORM that creates an “object store” that is then synced to MongoDb Atlas.  The following document describes the features of Atlas and how they compare to Couchbase Lite and Couchbase Capella App Services. 
+The Atlas Device SDK can be thought of as an on-device ORM that creates an “object store” that is then synced to MongoDb Atlas.  The following document describes the features of Atlas and how they compare to Couchbase Mobile.
 
->**NOTE** 
+>**NOTE**
 >
->Links to the Atlas SDK are linked to the Kotlin SDK specifically.  The Atlas SDK is available in multiple languages and the documentation can be found [here](https://www.mongodb.>com/docs/atlas/device-sdks/).  All code examples are provided in Kotlin for Android or SQL++.
+>This document is designed for Android developers using the Kotlin or Java programming language to build Android applications.  The Atlas SDK links provided point to the Kotlin SDK specifically.  For Android developers using Java, the Atlas SDK documentation can be found [here](https://www.mongodb.com/docs/atlas/device-sdks/sdk/java/).
 >
- 
+
 ## Frozen Architecture
 
 Couchbase Lite doesn’t use the [frozen architecture](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/frozen-arch/) paradigms, which the Atlas Device SDK uses as a way to pass objects between threads safely.
@@ -14,13 +14,13 @@ For most applications given that Couchbase Lite database is a single file, it is
 
 **Example:  Couchbase Lite Query API with the Kotlin SDK**
 
-In Couchbase Lite, the Query API is designed to integrate seamlessly with platform-specific mechanisms for dealing with loading and saving data. For instance, when using the Couchbase Lite Kotlin SDK, the Coroutines and Flow APIs in Kotlin can be leveraged out of the box without any modifications. 
+In Couchbase Lite, the Query API is designed to integrate seamlessly with platform-specific mechanisms for dealing with loading and saving data. For instance, when using the Couchbase Lite Kotlin SDK, the Coroutines and Flow APIs in Kotlin can be leveraged out of the box without any modifications.
 
 It is important to follow Android best practices for threading, especially when performing I/O operations. For example, it is recommended to use a single Dispatcher scope for database tasks, and Dispatchers.Main or ViewModelScope for UI-related tasks. Proper threading ensures efficient and responsive database interactions without blocking the UI thread.
 
 ## Model Data/Object Store
 
-Realm relies on the developer to define "[Realm objects](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#realm-objects)" or objects that are uniquely named that they can interact with Atlas Device and Device synchronization.  
+Realm relies on the developer to define "[Realm objects](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#realm-objects)" or objects that are uniquely named that they can interact with Atlas Device and Device synchronization.
 
 ### Realm Object Types
 
@@ -36,9 +36,9 @@ When you embed documents in Realm you use the [EmbeddedRealmObject](https://www.
 
 [Asymmetric Object Types](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#define-an-asymmetric-object-type) are unique to Realm and Atlas Device sync as a way to control insert-only documents.
 
-In contrast to Asymmetric Object Types, all documents inserted into a Couchbase Lite database are just a JSON document.  When you retrieve a document from the Couchbase Lite Database using the Collection API and provide a documentId, it’s a Document object (immutable) until you convert it to a MutableDocument which would then allow you to make changes to it.  
+In contrast to Asymmetric Object Types, all documents inserted into a Couchbase Lite database are just a JSON document.  When you retrieve a document from the Couchbase Lite Database using the Collection API and provide a documentId, it’s a Document object (immutable) until you convert it to a MutableDocument which would then allow you to make changes to it.
 
-Couchbase Lite does provide a document purge API that is discussed later in this document which can be used to provide similar functionality to Asymmetric Object Types depending on the use case  
+Couchbase Lite does provide a document purge API that is discussed later in this document which can be used to provide similar functionality to Asymmetric Object Types depending on the use case
 
 Couchbase Lite and App Service/Sync Gateway have a different [security model](https://docs.couchbase.com/sync-gateway/current/access-control-model.html) .  Document that should be synced are assigned to a [“channel”](https://docs.couchbase.com/sync-gateway/current/channels.html) and the [replication configuration](https://docs.couchbase.com/couchbase-lite/current/android/replication.html) to decide which documents in what scopes and collections should be synced vs stay internal to the local database on the device.  This is covered more in details later in the document.
 
@@ -46,50 +46,31 @@ Couchbase Lite and App Service/Sync Gateway have a different [security model](ht
 
 Realm supports three primary collection types: RealmList, RealmSet, and RealmDictionary. Each serves specific use cases for managing collections of objects in a database. Couchbase Lite, in contrast, does not have direct analogs to these collection types but instead supports flexible data structuring through JSON. This allows for storing arrays and dictionaries (akin to RealmList and RealmDictionary, respectively) directly within JSON documents.
 
-When querying data, Couchbase Lite retrieves results in a ResultSet, which can be iterated to extract individual Result objects.  Results are, essentially, JSON documents and can be treated as Dictionaries, wrapped in application objects, or serialized to JSON. 
+When querying data in Couchbase Lite with SQL++, it retrieves results in a ResultSet object, which can be iterated to extract individual Result objects.  Results are, essentially, JSON documents and can be treated as Dictionaries, wrapped in application objects, or serialized to JSON.
 
 These results can then be directly cast to custom object types defined within the application, facilitating seamless integration with the app’s data architecture. Additionally, results can be converted into JSON strings using the Result.toJSON() function. This JSON data can subsequently be processed using any serialization library compatible with the platform in use, providing extensive flexibility for data manipulation and integration.
 
-Couchbase Lite ResultSet Documentation:
-- [ResultSet API - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/query-resultsets.html)
-- [ResultSet API - Android-Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/query-resultsets.html)
-- [ResultSet API - C](https://docs.couchbase.com/couchbase-lite/current/c/query-resultsets.html)
-- [ResultSet API - Java](https://docs.couchbase.com/couchbase-lite/current/java/query-resultsets.html)
-- [ResultSet API - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/query-resultsets.html)
-- [ResultSet API - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/query-resultsets.html)
-- [ResultSet API - React Native](https://cbl-reactnative.dev/Queries/query-result-set)
-- [ResultSet API - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/query-resultsets.html)
-
+#### More Information
+- [Couchbase Lite ResultSet API](https://docs.couchbase.com/couchbase-lite/current/android/query-resultsets.html)
 
 ### Summary
 
 In using Realm and the Atlas Device SDK, developers must carefully plan their data model, particularly regarding the types of objects they inherit from, to effectively leverage the database’s capabilities. This upfront planning is crucial due to the structured nature of the data and the object-oriented approach of Realm.
 
-Conversely, Couchbase Lite offers a more flexible data handling approach. All information is stored as JSON documents in the database. This format allows developers to freely choose how they structure, write, and read their data. The flexibility of JSON documents enables a variety of patterns and structures to be implemented, adapting easily to the evolving needs of the application and reducing the need for extensive initial planning.
+Conversely, Couchbase Lite offers a flexible data handling approach. All information is stored as JSON documents in the database. This format allows developers to freely choose how they structure, write, and read their data. The flexibility of JSON documents enables a variety of patterns and structures to be implemented, adapting easily to the evolving needs of the application and reducing the need for extensive initial planning.
 
 ## Collections
 In Realm, objects are stored in collections based on the object type (all objects in a collection are of the same type) unless the developer is using the [Realm Unstructured](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#define-unstructured-data) data API (RealmAny).  Storing data in this way comes at a performance cost in Realm.
 
 Couchbase Lite supports Scopes and Collections for storing JSON documents.  A scope is a namespace that may contain up to 1,000 collections.  Collections are a group of JSON documents, whose contents can be different (schema doesn’t have to be the same).  Storing documents with different schemas in the same Collection comes at no performance loss in Couchbase Lite and SQL++ has keywords to help you query for documents that are missing a property(field).
 
-Couchbase Lite Scopes and Collections Documentation:
-- [Scopes - Collections API - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/scopes-collections-manage.html)
-- [Scopes - Collections API - Android-Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/scopes-collections-manage.html)
-- [Scopes - Collections API - C](https://docs.couchbase.com/couchbase-lite/current/c/scopes-collections-manage.html)
-- [Scopes - Collections API - Java](https://docs.couchbase.com/couchbase-lite/current/java/scopes-collections-manage.html)
-- [Scopes - Collections API - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/scopes-collections-manage.html)
-- [Scopes - Collections API - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/scopes-collections-manage.html)
-- [Scopes - Collections API - React Native](https://cbl-reactnative.dev/scopes-collections)
-- [Scopes - Collections API - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/scopes-collections-manage.html)
+#### More Information
+- [Couchbase Lite Scopes - Collections API](https://docs.couchbase.com/couchbase-lite/current/android/scopes-collections-manage.html)
 
 ### Supported Data Types/Data Modeling
 In Realm each platform the SDK supports as a given set of supported Data Types:
-- [Flutter](https://www.mongodb.com/docs/atlas/device-sdks/sdk/flutter/realm-database/model-data/data-types/)
 - [Java](https://www.mongodb.com/docs/atlas/device-sdks/sdk/java/model-data/data-types/field-types/)
 - [Kotlin](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/supported-types/)
-- [.NET](https://www.mongodb.com/docs/atlas/device-sdks/sdk/dotnet/model-data/data-types/field-types/)
-- [React Native](https://www.mongodb.com/docs/atlas/device-sdks/sdk/react-native/model-data/data-types/property-types/)
-- [Swift](https://www.mongodb.com/docs/atlas/device-sdks/sdk/swift/model-data/supported-types/#property-cheat-sheet)
 
 In Couchbase Lite, Document API Data Types supported are scalar types regardless of the platform, language, or SDK:
 
@@ -107,41 +88,28 @@ On top of scalar types, Couchbase Lite Documents also supports
 - Array - represents an ordered collection of objects
 - Blob - represents an arbitrary piece of binary data
 
-Couchbase Lite Document - Data Types Documentation:
-- [Data Types - Android - Java](https://docs.couchbase.com/couchbase-lite/current/android/document.html#data-types)
-- [Data Types - Android - Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/document.html#data-types)
-- [Data Types - C](https://docs.couchbase.com/couchbase-lite/current/c/document.html#data-types/)
-- [Data Types - Java](https://docs.couchbase.com/couchbase-lite/current/java/document.html#data-types)
-- [Data Types - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/document.html#data-typess)
-- [Data Types - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/document.html#data-types)
-- [Data Types - React Native](https://cbl-reactnative.dev/documents#document-structure)
-- [Data Types - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/document.html#data-types)
+#### More Information
+- [Couchbase Lite Data Types](https://docs.couchbase.com/couchbase-lite/current/android/document.html#data-types)
 
 ### ObjectId vs DocumentId
 
 Realm objects can use the [ObjectId](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/supported-types/#objectid) or [UUID](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/supported-types/#realmuuid) for unique identifiers for Realm objects.  The ObjectId is a 12-byte unique value that is [nullable](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/supported-types/#objectid), indexable, and used as a primary key.
 
-In Couchbase Lite a documentId can be any string value as long as it’s not null.  A document created without an ID will always have a randomly generated UUID used for the documentId.
+In Couchbase Lite a [documentId](https://docs.couchbase.com/couchbase-lite/current/android/document.html#document-structure) can be any string value as long as it’s not null.  A document created without an ID will always have a randomly generated UUID used for the documentId.
 
-### Geospatial Types
-In the Atlas SDK, Geospatial data, or "geodata", specifies points and geometric objects on the Earth's surface.
-
-Couchbase Lite has no direct feature or support for Geospatial data types.  A developer would need to write custom code to handle any geospatial calculations or look into 3rd party packages. 
+>**NOTE**
+>
+>Developers convert data from MongoDb Atlas to Couchbase Capella will need to take this into account when converting the _id field in a given Realm object to a DocumentId.
+>
 
 ### Property Annotations
 In Realm, property annotations play a critical role in defining the schema of objects. These annotations specify how objects should be stored in the database, including details on which fields are indexed, thereby enhancing query performance and ensuring data integrity.
 
 On the other hand, Couchbase Lite operates differently due to its use of JSON documents for storage. Instead of using property annotations to define schemas and index fields directly within the objects, Couchbase Lite manages indexing through a separate Index API. This approach allows developers to create and manage indexes independently of the document storage API, providing flexibility in how data is indexed and retrieved without altering the document structure itself.
 
-Couchbase Lite Index API Documentation:
-- [Indexing API - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/indexing.html)
-- [Indexing API - Android-Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/indexing.html)
-- [Indexing API - C](https://docs.couchbase.com/couchbase-lite/current/c/indexing.html)
-- [Indexing API - Java](https://docs.couchbase.com/couchbase-lite/current/java/indexing.html)
-- [Indexing API - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/indexing.html)
-- [Indexing API - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/indexing.html)
-- [Indexing API - React Native](https://cbl-reactnative.dev/indexes)
-- [Indexing API - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/indexing.html)
+#### More Information
+- [Couchbase Lite Populating a Document](https://docs.couchbase.com/couchbase-lite/current/android/document.html#populate-a-document)
+- [Couchbase Lite Indexing API](https://docs.couchbase.com/couchbase-lite/current/android/indexing.html)
 
 
 ### Backlinks and Relationships
@@ -151,21 +119,13 @@ Couchbase Lite, on the other hand, offers two approaches for managing document r
 
 To manage relationships between smaller documents or to ensure efficient querying, developers might prefer using document IDs. These IDs serve as references that link documents together, akin to foreign keys in relational databases. To resolve these relationships, developers can employ SQL++ JOIN operations, supported by Couchbase Lite’s query language. By indexing the relevant document ID fields, performance impacts during such queries are minimized, ensuring efficient data retrieval across linked documents.
 
-Couchbase Lite SQL++ JOIN Documentation: 
-- [SQL++ JOIN - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/query-n1ql-mobile.html#lbl-join)
-- [SQL++ JOIN - Android-Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/query-n1ql-mobile.html#lbl-join)
-- [SQL++ JOIN - C](https://docs.couchbase.com/couchbase-lite/current/c/query-n1ql-mobile.html#lbl-join)
-- [SQL++ JOIN - Java](https://docs.couchbase.com/couchbase-lite/current/java/query-n1ql-mobile.html#lbl-join)
-- [SQL++ JOIN - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/query-n1ql-mobile.html#lbl-join)
-- [SQL++ JOIN - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/query-n1ql-mobile.html#lbl-join)
-- [SQL++ JOIN - React Native](https://cbl-reactnative.dev/Queries/sqlplusplus#join-clause)
-- [SQL++ JOIN - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/query-n1ql-mobile.html#lbl-join)
-
+#### More Information
+- [Couchbase Lite SQL++ JOIN](https://docs.couchbase.com/couchbase-lite/current/android/query-n1ql-mobile.html#lbl-join)
 
 ### Changes to Object Model (schema synchronization)
-Realms [documentation](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/change-an-object-model/) has a detailed explanation of when and when you don’t have to worry about schema changes that is out of the scope of this document.  
+Realms [documentation](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/change-an-object-model/) has a detailed explanation of when and when you don’t have to worry about schema changes that is out of the scope of this document.
 
-Couchbase Lite is a Documents based database, in which documents are stored in JSON, so you never have to be concerned about schema changes.
+Couchbase Lite is a Documents based database, in which documents are stored in [JSON](https://docs.couchbase.com/couchbase-lite/current/android/document.html#lbl-json-data), so you never have to be concerned about schema changes.
 
 ### Summary
 In both Realm and the Atlas Device SDK, considerable effort is dedicated to comprehensively understanding the data schema and meticulously defining the synchronization model for devices. This process is crucial for ensuring that the data structures are correctly aligned with the operational requirements and synchronization protocols.
@@ -175,16 +135,24 @@ Conversely, Couchbase Lite is a document-oriented database that leverages the in
 ## Configuring and Opening Realm vs Couchbase Lite Database
 
 ### Realm File
+
 Realm stores a binary-encoded version of every object and type in a single .realm file.  When you open a .realm file it will create one if it doesn’t already exist.  The file is located in a path the developer specifies.
 
 ### Couchbase Lite Database
 
-Couchbase Lite stores all JSON documents in a single database that is a filename with a cblite2 extension (technically, if you were to look at the file on disk you would see it's a directory, but you should never mess with or attempt to open the files in the directory).   
+Couchbase Lite stores all JSON documents in a single database that is a filename with a cblite2 extension (technically, if you were to look at the file on disk you would see it's a directory, but you should never mess with or attempt to open the files in the directory).
 
 When you open a database a new cblite2 file will be created if it doesn’t already exist on the disk.  The developer specifies the path to the database, or a default path is used by the SDK when no path is provided.
 
+#### Tools for viewing Database contents
+Couchbase Lite has a few ways to view the contents of a database file outside your application.
+
+- [Android Studio Plugin](https://plugins.jetbrains.com/plugin/22131-couchbase)
+- [Visual Studio Code Plugin](https://marketplace.visualstudio.com/items?itemName=Couchbase.vscode-cblite)
+- [cblite Command Line Tool](https://github.com/couchbaselabs/couchbase-mobile-tools/blob/master/Documentation.md)
+
 ### Opening a Realm
-To open a realm, you must provide a [RealmConfiguration](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/open-and-close-a-realm/#open-a-realm) object that defines the details of the realm.  This configuration is passed to the *Realm.open* function.  
+To open a realm, you must provide a [RealmConfiguration](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/open-and-close-a-realm/#open-a-realm) object that defines the details of the realm.  This configuration is passed to the *Realm.open* function.
 
 ```kotlin
 // Create a realm configuration with configuration builder
@@ -215,21 +183,8 @@ val db = Database(
 Log.v("Successfully opened database: ${db.name}")
 ```
 
-**Couchbase Lite Database Encryption Documentation**:
-- [Database Encryption - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/database.html#database-encryption)
-- [Database Encryption - Android-Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/database.html#database-encryption)
-- [Database Encryption - C](https://docs.couchbase.com/couchbase-lite/current/c/database.html#database-encryption)
-- [Database Encryption - Java](https://docs.couchbase.com/couchbase-lite/current/java/database.html#database-encryption)
-- [Database Encryption - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/database.html#database-encryption)
-- [Database Encryption - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/database.html#database-encryption)
-- [Database Encryption - React Native](https://cbl-reactnative.dev/databases#database-encryption)
-- [Database Encryption - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/database.html#database-encryption)
-
-
-### In-Memory Realm
-In Realm, you can open a realm that is stored entirely [in memory](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/open-and-close-a-realm/#open-an-in-memory-realm).  When this option is used, no realm file is created.   
-
-Couchbase Lite SDK has no equivalent feature to this.  If a developer wanted data in memory only (no information on disk), the best route would be to call the App Services/Sync Gateway REST API to retrieve documents into memory.
+#### More Information
+- [Couchbase Lite Database Encryption](https://docs.couchbase.com/couchbase-lite/current/android/database.html#database-encryption)
 
 ### Custom Realm Configuration
 In Realm, a custom configuration can be based to trigger additional functionality:
@@ -239,71 +194,30 @@ In Realm, a custom configuration can be based to trigger additional functionalit
 
 As stated before, Couchbase Lite doesn’t need schema management or migration plans, so there is no equivalent to this.  Couchbase Lite databases have a Database Maintenance API which can be used to run tasks like compacting the database or to rebuild indexes.
 
-Couchbase Lite Database Maintenance API Documentation:
-- [Database Maintenance API - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/database.html#lbl-db-util)
-- [Database Maintenance API - Android-Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/database.html#lbl-db-util)
-- [Database Maintenance API - C](https://docs.couchbase.com/couchbase-lite/current/c/database.html#lbl-db-util)
-- [Database Maintenance API - Java](https://docs.couchbase.com/couchbase-lite/current/java/database.html#lbl-db-util)
-- [Database Maintenance API - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/database.html#lbl-db-util)
-- [Database Maintenance API - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/database.html#lbl-db-util)
-- [Database Maintenance API - React Native](https://cbl-reactnative.dev/databases#database-maintenance)
-- [Database Maintenance API - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/database.html#lbl-db-util)
-
-### Add Initial Data to Realm
-Realm provides an [API](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/open-and-close-a-realm/#add-initial-data-to-realm) that facilitates the insertion of initial data into a Realm database at the time of its first opening.
-
-While there is no direct equivalent in Couchbase Lite, a similar outcome can be achieved through the use of a pre-built database. This approach enables the application to be loaded with data upfront, bypassing the need to sync data from App Services during the initial application launch. This could significantly reduce the wait time for users upon their first installation and startup of the application. 
-
->**NOTE**
->
->It is trivial to provide initial data, over the network, in the first sync of the Database collection(s) when the app launches. The only reason to provide an initial pre-built database is to save on network traffic, once.
->
-
-Detailed guidance on implementing pre-built databases is available in Couchbase Lite’s documentation for each supported platform:
-- [Pre-build Database - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/prebuilt-database.html)
-- [Pre-build Database - Android-Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/prebuilt-database.html)
-- [Pre-build Database - C](https://docs.couchbase.com/couchbase-lite/current/c/prebuilt-database.html)
-- [Pre-build Database - Java](https://docs.couchbase.com/couchbase-lite/current/java/prebuilt-database.html)
-- [Pre-build Database - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/prebuilt-database.html)
-- [Pre-build Database - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/prebuilt-database.html)
-- [Pre-build Database - React Native](https://cbl-reactnative.dev/database-prebuilt)
-- [Pre-build Database - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/prebuilt-database.html)
+#### More Information
+- [Couchbase Lite Database Maintenance API](https://docs.couchbase.com/couchbase-lite/current/android/database.html#lbl-db-util)
 
 ### Close a Realm
 The Realm SDK provides a method to close a realm with the code [realm.close](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/open-and-close-a-realm/#close-a-realm).  Couchbase Lite’s SDK also provides a close function which will also validate that the replicator and change listeners are closed before closing the connection via the Couchbase Lite Database *close* function.
 
 ### Copying Data into a New Realm / Couchbase Lite Database Copy
-The [Realm.writeCopyTo](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/open-and-close-a-realm/#copy-data-into-a-new-realm) method allows developers to copy data from an existing realm to a new realm.  There are some rules to this which are well documented.  
+The [Realm.writeCopyTo](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/open-and-close-a-realm/#copy-data-into-a-new-realm) method allows developers to copy data from an existing realm to a new realm.  There are some rules to this which are well documented.
 
-In Couchbase Lite there is a *Database.copy* function that can copy a database file to a new database file.  
+In Couchbase Lite there is a *Database.copy* function that can copy a database file to a new database file.
 
-> **NOTE** 
-> You should NEVER copy a Couchbase Lite database outside of using the Database.copy API as it will invalidate other apps checkpoints.  
-> 
- 
-Couchbase Lite Database - Copy Documentation:
-- [Database Copy - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/prebuilt-database.html#deploy-db)
-- [Database Copy - Android-Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/prebuilt-database.html#deploy-db)
-- [Database Copy - C](https://docs.couchbase.com/couchbase-lite/current/c/prebuilt-database.html#deploy-db)
-- [Database Copy - Java](https://docs.couchbase.com/couchbase-lite/current/java/prebuilt-database.html#deploy-db)
-- [Database Copy - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/prebuilt-database.html#deploy-db)
-- [Database Copy - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/prebuilt-database.html#deploy-db)
-- [Database Copy - React Native](https://cbl-reactnative.dev/database-prebuilt#using-pre-built-database-on-app-launch)
-- [Database Copy - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/prebuilt-database.html#deploy-db)
+> **NOTE**
+> You should NEVER copy a Couchbase Lite database outside using the Database.copy API as it will invalidate other apps checkpoints.
+>
+
+#### More Information
+- [Couchbase Lite - Database Copy](https://docs.couchbase.com/couchbase-lite/current/android/prebuilt-database.html#deploy-db)
 
 ### Summary
 
 Both the Realm API and the Couchbase Lite Database API exhibit comparable functionalities when managing databases, particularly in terms of opening, closing, and copying database instances.
 
-Couchbase Lite Database Documentation: 
-- [Database API - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/database.html)
-- [Database API - Android-Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/database.html)
-- [Database API - C](https://docs.couchbase.com/couchbase-lite/current/c/database.html)
-- [Database API - Java](https://docs.couchbase.com/couchbase-lite/current/java/database.html)
-- [Database API - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/database.html)
-- [Database API - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/database.html)
-- [Database API - React Native](https://cbl-reactnative.dev/databases)
-- [Database API - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/database.html)
+#### More Information
+- [Couchbase Lite - Database API](https://docs.couchbase.com/couchbase-lite/current/android/database.html)
 
 ## Create & Write Data in Realm vs Couchbase Lite
 
@@ -325,7 +239,7 @@ realm.write {
     // Work with the managed object ...
 }
 ```
-In this code an object is created, then copied to the Realm. 
+In this code an object is created, then copied to the Realm.
 
 For individual objects, Couchbase Lite doesn’t take this approach.  Instead, Couchbase Lite uses its MutableDocument API to allow developers to create a document and then save it into a Collection.  Within Multiple Documents, you have a few different ways you can create one.  The standard approach is to write some code that takes your data and puts it into the Mutable Document using Key Value pairs:
 ```kotlin
@@ -346,9 +260,9 @@ collection.save(mutableDocument);
 ```
 > **NOTE**
 > You will always take a performance and memory hit depending on device constraints when serializing and deserializing objects to and from JSON strings.  If performance is a concern, it's best to use the Key Value pair approach when creating documents in Couchbase Lite.
-> 
+>
 
-Couchbase Lite does provide a Batch API to write multiple documents at once.  At the local level this operation is still transactional: no other Database instances, including ones managed by the replicator can make changes during the execution of the block, and other instances will not see partial changes. 
+Couchbase Lite does provide a Batch API to write multiple documents at once.  At the local level this operation is still transactional: no other Database instances, including ones managed by the replicator can make changes during the execution of the block, and other instances will not see partial changes.
 
 An example of a inBatch transaction in Couchbase Lite:
 
@@ -366,15 +280,10 @@ database.inBatch(UnitOfWork {
 })
 ```
 
+#### More Information
 Couchbase Lite Document Batch API Documentation:
-- [Batch Operations - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/document.html#batch-operations)
-- [Batch Operations - Android-Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/document.html#batch-operations)
-- [Batch Operations - C](https://docs.couchbase.com/couchbase-lite/current/c/document.html#batch-operations)
-- [Batch Operations - Java](https://docs.couchbase.com/couchbase-lite/current/java/document.html#batch-operations)
-- [Batch Operations - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/document.html#batch-operations)
-- [Batch Operations - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/document.html#batch-operations)
-- [Batch Operations - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/document.html#batch-operations)
-- 
+- [Couchbase Lite - Batch Operations](https://docs.couchbase.com/couchbase-lite/current/android/document.html#batch-operations)
+
 ### Create an Embedded Object
 In Realm the user must take care when creating embedded objects and provides an API to achieve this:
 
@@ -444,7 +353,7 @@ realm.write {
 // deleted from the local realm after sync is complete.
 }
 ```
-Couchbase Lite does not offer a direct API for certain specific operations. Instead, alternatives such as configuring a replicator in PUSH-only mode are available which would only send documents saved to the database to Capella App Services without pulling new documents down to the database. 
+Couchbase Lite does not offer a direct API for certain specific operations. Instead, alternatives such as configuring a replicator in PUSH-only mode are available which would only send documents saved to the database to Capella App Services without pulling new documents down to the database.
 
 ```kotlin
 val replicatorConfig = ReplicatorConfigurationFactory.newConfig(
@@ -454,16 +363,8 @@ val replicatorConfig = ReplicatorConfigurationFactory.newConfig(
 )
 ```
 
-Couchbase Lite Replicator Type Documentation:
-- [Replicator Sync Mode - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/replication.html#lbl-cfg-sync)
-- [Replicator Sync Mode - Android-Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/replication.html#lbl-cfg-sync)
-- [Replicator Sync Mode - C](https://docs.couchbase.com/couchbase-lite/current/c/replication.html#lbl-cfg-sync)
-- [Replicator Sync Mode - Java](https://docs.couchbase.com/couchbase-lite/current/java/replication.html#lbl-cfg-sync)
-- [Replicator Sync Mode - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/replication.html#lbl-cfg-sync)
-- [Replicator Sync Mode - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/replication.html#lbl-cfg-sync)
-- [Replicator Sync Mode - React Native](https://cbl-reactnative.dev/DataSync/remote-sync-gateway#sync-mode)
-- [Replicator Sync Mode - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/replication.html#lbl-cfg-sync)
-
+#### More Information
+- [Couchbase Lite - Replicator Sync Mode](https://docs.couchbase.com/couchbase-lite/current/android/replication.html#lbl-cfg-sync)
 
 Finally for short-lived data, a document could be created with an expiration time and then deleted from the database after the expiration time has passed.  This purge is NOT replicated to App Services.
 
@@ -476,31 +377,17 @@ try collection.setDocumentExpiration
     (id: "doc123", expiration: ttl)
 ```
 
-Couchbase Lite Document Expiration Documentation:
-- [Document Expiration - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/document.html#document-expiration)
-- [Document Expiration - Android-Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/document.html#document-expiration)
-- [Document Expiration - C](https://docs.couchbase.com/couchbase-lite/current/c/document.html#document-expiration)
-- [Document Expiration - Java](https://docs.couchbase.com/couchbase-lite/current/java/document.html#document-expiration)
-- [Document Expiration - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/document.html#document-expiration)
-- [Document Expiration - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/document.html#document-expiration)
-- [Document Expiration - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/document.html#document-expiration)
+#### More Information
+- [Couchbase Lite - Document Expiration](https://docs.couchbase.com/couchbase-lite/current/android/document.html#document-expiration)
 
 ### Create Realm Properties
-Realm properties allow you to define [Realm-specific types](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/crud/create/#:~:text=Realm%2Dspecific%20types) to an object.  
+Realm properties allow you to define [Realm-specific types](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/crud/create/#:~:text=Realm%2Dspecific%20types) to an object.
 
-Couchbase Lite features the MutableDocument API, which facilitates the mapping of fields to supported scalar types.  
+Couchbase Lite features the MutableDocument API, which facilitates the mapping of fields to supported scalar types.
 
-Couchbase Lite Document API Documentation:
-- [Document API - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/document.html)
-- [Document API - Android-Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/document.html)
-- [Document API - C](https://docs.couchbase.com/couchbase-lite/current/c/document.html)
-- [Document API - Java](https://docs.couchbase.com/couchbase-lite/current/java/document.html)
-- [Document API - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/document.html)
-- [Document API - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/document.html)
-- [Document API - React Native](https://cbl-reactnative.dev/documents)
-- [Document API - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/document.html)
+- [Couchbase Lite - Document API](https://docs.couchbase.com/couchbase-lite/current/android/document.html)
 
-### Create a Relationship Property 
+### Create a Relationship Property
 
 In the Atlas Device SDK, you can create a To-One or To-Many relationship between objects. An example of this:
 
@@ -568,7 +455,7 @@ When this data is synced to MongoDb Atlas, it would look something similar to th
 }
 ```
 
-To achieve the same results in Couchbase Lite, a developer would just make embedded JSON object or use the Key Value pair approach with dictionaries.  An example using serialization with an embedded JSON object is below: 
+To achieve the same results in Couchbase Lite, a developer would just make embedded JSON object or use the Key Value pair approach with dictionaries.  An example using serialization with an embedded JSON object is below:
 
 ```kotlin
 // Define serializable data classes
@@ -672,7 +559,7 @@ query.execute().forEach { result ->
 ```
 
 ### Query All Objects of a Type
-In the Atlas SDK the query() function can be used to return all objects of a [specific type](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/crud/read/#query-all-objects-of-a-type).  
+In the Atlas SDK the query() function can be used to return all objects of a [specific type](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/crud/read/#query-all-objects-of-a-type).
 
 In Couchbase Lite the recommended approach would be to store documents by type of information into unique collections, thus you can just query a collection to get all the documents of that type.  For example, you could store all Frogs in a scope called animals and a collection called frogs, thus getting all frogs back from the database is a SQL query.
 
@@ -681,7 +568,7 @@ SELECT * FROM animals.frogs as Frog
 ```
 
 ### Query a Single Object/Filter by Primary Key
-The first function on the query in the Atlas SDK can be used to return a single object of a specific type.  
+The first function on the query in the Atlas SDK can be used to return a single object of a specific type.
 
 ```kotlin
 val querySingleFrog = realm.query<Frog>().first()
@@ -693,14 +580,14 @@ if (singleFrog != null) {
 }
 ```
 
-Atlas also supports filtering objects by the PRIMARY_KEY_VALUE.  
+Atlas also supports filtering objects by the PRIMARY_KEY_VALUE.
 
 ```kotlin
 val filterByPrimaryKey = realm.query<Frog>("_id == $0", PRIMARY_KEY_VALUE)
 val findPrimaryKey = filterByPrimaryKey.find().first()
 ```
 
-In Couchbase Lite you have a few options for getting a single document of a given type back.  To start out  with, if you know the document ID of a given document, you can just call the collection’s document function to get the document by its ID.  
+In Couchbase Lite you have a few options for getting a single document of a given type back.  To start out  with, if you know the document ID of a given document, you can just call the collection’s document function to get the document by its ID.
 
 ```kotlin
 val document = collection.getDocument(mutableDocument);
@@ -735,7 +622,7 @@ SELECT * FROM exampleScope.Contact as contact WHERE address.propertyOwner.name =
 ```
 
 ### Filter By RealmAny (Mixed) Property
-A [RealmAny (Mixed) property](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/crud/read/#filter-by-embedded-object-property) represents a polymorphic value that can hold any one of its supported data types at a particular moment. 
+A [RealmAny (Mixed) property](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/crud/read/#filter-by-embedded-object-property) represents a polymorphic value that can hold any one of its supported data types at a particular moment.
 
 ```kotlin 
 val filterByRealmAnyInt = realm.query<Frog>("favoriteThing.@type == 'int'")
@@ -749,7 +636,7 @@ SELECT * FROM exampleScope.Frog as frog WHERE ISNUMBER(frog.favoriteThing)
 ```
 
 ### Filter by Full-Text Search (FTS)
-In the [Atlas Device SDK](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/crud/read/#filter-by-full-text-search--fts--property), you can filter any property that is annotated with the [@FullText](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/property-annotations/#std-label-kotlin-fts-index) annotation.  
+In the [Atlas Device SDK](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/crud/read/#filter-by-full-text-search--fts--property), you can filter any property that is annotated with the [@FullText](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/property-annotations/#std-label-kotlin-fts-index) annotation.
 
 ```kotlin
 // Filter by FTS property value using 'TEXT'
@@ -774,22 +661,14 @@ collection.createIndex("idxFrogPhysicalDescription",
     
 ```
 Once the index is created you can use the SQL++ keyword MATCH OR RANK functions to query the collection using FTS
- 
+
 ```sql
 SELECT * FROM animals.frogs as frog 
 WHERE MATCH(frog.physicalDescription, 'green')
 ```
 
-Couchbase Lite documentation on Full-Text Search indexes can be found here:
-
-- [Full-Text Search API - Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/fts.html)
-- [Full-Text Search API - Android-Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/fts.html)
-- [Full-Text Search API - C](https://docs.couchbase.com/couchbase-lite/current/c/fts.html)
-- [Full-Text Search API - Java](https://docs.couchbase.com/couchbase-lite/current/java/fts.html)
-- [Full-Text Search API - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/fts.html)
-- [Full-Text Search API - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/fts.html)
-- [Full-Text Search API - React Native](https://cbl-reactnative.dev/full-text-search)
-- [Full-Text Search API - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/fts.html)
+#### More Information
+- [Couchbase Lite - Full-Text Search API](https://docs.couchbase.com/couchbase-lite/current/android/fts.html)
 
 ### Sort and Limit Results
 In the Atlas SDK, you can sort and limit results using the sort(), limit(), and distinct() functions.
@@ -818,16 +697,9 @@ The Atlas Device SDK uses  RQL aggregate operators, one of the following conveni
 - sum()
 - count()
 
-In Couchbase Lite, SQL++ provides a plethora of aggregate operators and functions.  
-Couchbase Lite SQL++ for Mobile Developers Documentation: 
-- [SQL++ for Android-Java](https://docs.couchbase.com/couchbase-lite/current/android/query-n1ql-mobile.html)
-- [SQL++ for Android-Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/query-n1ql-mobile.html)
-- [SQL++ for C](https://docs.couchbase.com/couchbase-lite/current/c/query-n1ql-mobile.html)
-- [SQL++ for Java](https://docs.couchbase.com/couchbase-lite/current/java/query-n1ql-mobile.html)
-- [SQL++ for .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/query-n1ql-mobile.html)
-- [SQL++ for Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/query-n1ql-mobile.html)
-- [SQL++ for React Native](https://cbl-reactnative.dev/sqlplusplus)
-- [SQL++ for Swift](https://docs.couchbase.com/couchbase-lite/current/swift/query-n1ql-mobile.html)
+In Couchbase Lite, SQL++ provides a plethora of aggregate operators and functions.
+##### More Information
+- [Couchbase Lite - SQL++ for Mobile Developers](https://docs.couchbase.com/couchbase-lite/current/android/query-n1ql-mobile.html)
 
 ### Summary
 
@@ -839,7 +711,7 @@ Couchbase Lite utilizes SQL++, an extension of the industry-standard SQL, to que
 
 Realm supports update and upsert operations on Realm objects and embedded objects. An upsert operation either inserts a new instance of an object or updates an existing object that meets certain criteria.  The syntax to update an object in a realm is the same for a local or a synced realm. However, there are additional considerations that determine whether the write operation in a synced realm is successful.  Realm requires operations for updating are done in the realm.write or realm.writeBlocking transaction block.
 
-In Couchbase Lite updating a document is almost the same as workflow as creating a document.  You can use the MutableDocument API to update a document in a collection.  To update a document, you first retrieve the document from the collection, make the changes to the document, and then save the document back to the collection.  
+In Couchbase Lite updating a document is almost the same as workflow as creating a document.  You can use the MutableDocument API to update a document in a collection.  To update a document, you first retrieve the document from the collection, make the changes to the document, and then save the document back to the collection.
 
 ```kotlin
 val collection = database.getCollection("frogs", "animals")
@@ -855,8 +727,7 @@ collection.getDocument("frogId::kermit")
 
 As previously discussed, Couchbase Lite offers a robust [batch API](https://docs.couchbase.com/couchbase-lite/current/android/document.html#batch-operations) that enables the insertion or updating of multiple documents within a single transactional operation. This capability ensures atomicity at the local database level, meaning that no other Database instances, including those managed by the replicator, can modify the database during the execution of the transactional block. Additionally, other instances are prevented from observing any intermediate states of the transaction.
 
-However, it is important to recognize that Couchbase Mobile operates as part of a distributed system. Consequently, despite the transactional integrity maintained at the local database level, the asynchronous nature of the replication process does not guarantee simultaneous visibility of changes across Sync Gateway or other devices. 
-
+However, it is important to recognize that Couchbase Mobile operates as part of a distributed system. Consequently, despite the transactional integrity maintained at the local database level, the asynchronous nature of the replication process does not guarantee simultaneous visibility of changes across Sync Gateway or other devices.
 
 ## Deleting Realm Objects in Realm vs Couchbase Lite
 
@@ -876,7 +747,7 @@ realm.write {
 }
 ```
 
-In Couchbase Lite, the Collection's API provides a few different functions based on the developers need.  The first API is the Collection API delete document function. 
+In Couchbase Lite, the Collection's API provides a few different functions based on the developers need.  The first API is the Collection API delete document function.
 
 ```kotlin
 val collection = database.getCollection("frogs", "animals")
@@ -897,13 +768,13 @@ collection.getDocument("frogId::kermit")
                     ConcurrencyControl.FAIL_ON_CONFLICT)
     }
 ```
-Note that when specifying the failOnConflict concurrency control, and conflict occurred, the delete operation will fail with 'false' value returned.   
+Note that when specifying the failOnConflict concurrency control, and conflict occurred, the delete operation will fail with 'false' value returned.
 
 When calling the delete function, that deletion will propagate to the server and to all the other devices that sync with that database.  Calling delete is actually identical to saving a document with a body that is empty except for a single property "_deleted" set to true.
 
 ### Purging a Document
 
-Couchbase Lite also provides another API to remove a document from the database.  This API is called purge.  Purging a document is more extreme than calling the delete API: it actually deletes the document and all its metadata. There’s nothing left to indicate the document ever existed.  For this reason, though, calling purge doesn’t replicate.  
+Couchbase Lite also provides another API to remove a document from the database.  This API is called purge.  Purging a document is more extreme than calling the delete API: it actually deletes the document and all its metadata. There’s nothing left to indicate the document ever existed.  For this reason, though, calling purge doesn’t replicate.
 
 ```kotlin
 val collection = database.getCollection("frogs", "animals")
@@ -920,14 +791,16 @@ collection.getDocument("frogId::kermit")
 
 ### Reduce File Size
 
-Starting in version 1.6.0 of the Atlas Device SDK, realm automatically compacts Realm files in the background.  Automatic compaction begins when the size of unused space in the file is more than twice the size of user data in the file. Automatic compaction only takes place when the file is not being accessed.  
+Starting in version 1.6.0 of the Atlas Device SDK, realm automatically compacts Realm files in the background.  Automatic compaction begins when the size of unused space in the file is more than twice the size of user data in the file. Automatic compaction only takes place when the file is not being accessed.
 
 Couchbase Lite also provides the Database Maintenance API that can provide several functions, including a compact function that shrinks the database file by removing any empty pages, and deletes blobs that are no longer referenced by any documents.
-
 
 ```kotlin
 database.performMaintenance(DatabaseMaintenance.COMPACT) 
 ```
+
+#### More Information
+- [Couchbase Lite - Database Maintenance](https://docs.couchbase.com/couchbase-lite/current/android/database.html#lbl-db-util)
 
 ### Delete a Realm File
 
@@ -943,9 +816,13 @@ In Couchbase Lite, there is a function provided to delete a database.  Deleting 
 ```kotlin
 database.delete()
 ```
-##  React to Changes Realm vs Couchbase Lite 
 
-### Change Events 
+#### More Information
+- [Couchbase Lite - Delete Database](https://docs.couchbase.com/mobile/3.2.0/couchbase-lite-android/com/couchbase/lite/Database.html#delete(java.lang.String,java.io.File))
+
+##  React to Changes Realm vs Couchbase Lite
+
+### Change Events
 
 In Realm, you can subscribe to changes on the following [events](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/react-to-changes/):
 
@@ -956,60 +833,18 @@ In Realm, you can subscribe to changes on the following [events](https://www.mon
 The Atlas Device SDK only provides notifications for objects nested up to four layers deep. If you need to react to changes in more deeply-nested objects.
 
 Couchbase Lite provides change listeners for the following events:
-- **Query Listener (Live Query)**
-  - [Live Query - Android Java](https://docs.couchbase.com/couchbase-lite/current/android/query-live.html)
-  - [Live Query - Android Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/query-live.html#using-kotlin-flows-and-livedata)
-  - [Live Query - C](https://docs.couchbase.com/couchbase-lite/current/c/query-live.html)
-  - [Live Query - Java](https://docs.couchbase.com/couchbase-lite/current/java/query-live.html)
-  - [Live Query - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/query-live.html)
-  - [Live Query - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/query-live.html)
-  - [Live Query - React Native](https://cbl-reactnative.dev/Queries/live-queries)
-  - [Live Query - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/query-live.html)
-
-- **Document Listener**
-  - [Document Change - Android Java](https://docs.couchbase.com/couchbase-lite/current/android/document.html#document-change-events)
-  - [Document Change - Android Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/document.html#using-kotlin-flows-and-livedata)
-  - [Document Change - C](https://docs.couchbase.com/couchbase-lite/current/c/document.html#document-change-events)
-  - [Document Change - Java](https://docs.couchbase.com/couchbase-lite/current/java/document.html#document-change-events)
-  - [Document Change - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/document.html#document-change-events)
-  - [Document Change - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/document.html#document-change-events)
-  - [Document Change - React Native](https://cbl-reactnative.dev/documents#document-change-events)
-  - [Document Change - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/document.html#document-change-events)
-
-- **Collection Listener**
-    - [Collection Change - Android Java](https://docs.couchbase.com/mobile/3.2.0/couchbase-lite-android/com/couchbase/lite/CollectionChangeListener.html)
-    - [Collection Change - Android Kotlin](https://docs.couchbase.com/mobile/3.2.0/couchbase-lite-android/com/couchbase/lite/CollectionChangeListener.html)
-    - [Collection Change - C](https://docs.couchbase.com/mobile/3.2.0/couchbase-lite-c/C/html/group__collection.html)
-    - [Collection Change - Java](https://docs.couchbase.com/mobile/3.2.0/couchbase-lite-java/com/couchbase/lite/CollectionChangeListener.html)
-    - [Collection Change - .NET](https://docs.couchbase.com/mobile/3.2.0/couchbase-lite-net/api/Couchbase.Lite.Collection.html#Couchbase_Lite_Collection_AddChangeListener_System_EventHandler_Couchbase_Lite_CollectionChangedEventArgs__)
-    - [Collection Change - Objective-C](https://docs.couchbase.com/mobile/3.2.0/couchbase-lite-objc/Classes/CBLCollectionChange.html)
-    - [Collection Change - Swift](https://docs.couchbase.com/mobile/3.2.0/couchbase-lite-swift/Classes/Collection.html#/s:18CouchbaseLiteSwift10CollectionC17addChangeListener8listenerAA0G5TokenCyAA0dF0Vc_tF)
-- **Replication Status Listener**
-  - [Replicator Status Change - Android Java](https://docs.couchbase.com/couchbase-lite/current/android/replication.html#lbl-repl-status)
-  - [Replicator Status Change - Android Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/replication.html#lbl-repl-status)
-  - [Replicator Status Change - C](https://docs.couchbase.com/couchbase-lite/current/c/replication.html#lbl-repl-status)
-  - [Replicator Status Change - Java](https://docs.couchbase.com/couchbase-lite/current/java/replication.html#lbl-repl-status)
-  - [Replicator Status Change - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/replication.html#lbl-repl-status)
-  - [Replicator Status Change - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/replication.html#lbl-repl-status)
-  - [Replicator Status Change - React Native](https://cbl-reactnative.dev/DataSync/remote-sync-gateway#replicator-status)
-  - [Replicator Status Change - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/replication.html#lbl-repl-status)
-
-- **Replication Document Listener**
-    - [Replicator Document Change - Android Java](https://docs.couchbase.com/couchbase-lite/current/android/replication.html#lbl-repl-evnts)
-    - [Replicator Document Change - Android Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/replication.html#lbl-repl-evnts)
-    - [Replicator Document Change - C](https://docs.couchbase.com/couchbase-lite/current/c/replication.html#lbl-repl-evnts)
-    - [Replicator Document Change - Java](https://docs.couchbase.com/couchbase-lite/current/java/replication.html#lbl-repl-evnts)
-    - [Replicator Document Change - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/replication.html#lbl-repl-evnts)
-    - [Replicator Document Change - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/replication.html#lbl-repl-evnts)
-    - [Replicator Document Change - React Native](https://cbl-reactnative.dev/DataSync/remote-sync-gateway#monitor-document-changes)
-    - [Replicator Document Change - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/replication.html#lbl-repl-evnts)
+- [Query Listener (Live Query)](https://docs.couchbase.com/couchbase-lite/current/android/query-live.html)
+- [Document Listener](https://docs.couchbase.com/couchbase-lite/current/android/document.html#document-change-events)
+- [Collection Listener](https://docs.couchbase.com/mobile/3.2.0/couchbase-lite-android/com/couchbase/lite/CollectionChangeListener.html)
+- [Replication Status Listener](https://docs.couchbase.com/couchbase-lite/current/android/replication.html#lbl-repl-status)
+- [Replication Document Listener](https://docs.couchbase.com/couchbase-lite/current/android/replication.html#lbl-repl-evnts)
 
 ### Summary
 
 Couchbase Lite offers a suite of change listener APIs that enable developers to implement event-driven architectures by responding programmatically to modifications in collections, documents, queries, and the replication process. These event listeners facilitate real-time data handling by triggering callback functions when changes occur, thereby allowing applications to maintain up-to-date states and perform actions dynamically based on the nature of the data change observed.
 
-## Connecting to Atlas/Capella App Services 
-Each platform has a set of documentation that explains on how to connect to App Services and configuration of it.
+## Connecting to Atlas/Capella App Services
+Each platform has a set of documentation that explains on how to configure App Services.
 
 **MongoDb Atlas**
 [App Services Connection Documentation](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/app-services/connect-to-app-services-backend/)
@@ -1019,37 +854,51 @@ Each platform has a set of documentation that explains on how to connect to App 
 [App Services Connection Documentation](https://docs.couchbase.com/cloud/app-services/deployment/creating-an-app-service.html)
 [Managing Users](https://docs.couchbase.com/cloud/app-services/user-management/create-user.html)
 
+Connecting to Capella App Services involves configuration of a replicator and then starting replication.  An example of a simple configuration can be found below:
 
-## Syncing Realm vs Couchbase Lite Sync with Capella App Services 
-From a high level both platforms can sync information from the device to the cloud via there respective App Services.  There are massive differences between Atlas App Services security model and Couchbase Capella's security model.  Before syncing data to the cloud, developers should review the following documentation.
+```kotlin
+// initialize the replicator configuration
+val repl = Replicator(
+    ReplicatorConfigurationFactory.newConfig(
+        target = URLEndpoint(URI("ws://localhost:4984/mydatabase")),
+        collections = mapOf(collections to null),
+        //  other config params as required . .
+        heartbeat = 150,
+        maxAttempts = 20,
+        maxAttemptWaitTime = 600
+    )
+)
+repl.start()
+thisReplicator = repl
+```
+#### More Information
+[Couchbase Lite - Replicator Configuration](https://docs.couchbase.com/couchbase-lite/current/android/replication.html#lbl-cfg-repl)
 
-Couchbase Capella App Services is a service that automates and manages a cluster of Sync Gateway servers in the cloud that are  used to sync information between App Services and a Couchbase Capella Bucket.  Some documentation will need to be reviewed from the Sync Gateway documentation area of the docs while other information can be found in the Couchbase Capella App Services documentation. It's recommended that developers and architects understand Channels, Users, Roles, the Import Process, and the Sync Function that is used to set security on documents before attempting to configure Couchbase Capella App Services. 
+## Syncing Realm vs Couchbase Lite Sync with Capella App Services
+From a high level both platforms can sync information from the device to the cloud via there respective App Services.  There are differences between Atlas App Services security model which uses subscriptions and Couchbase Capella's security model, which is based on channels.  Before syncing data to the cloud, developers should review the documentation below.
+
+Couchbase Capella App Services is a service that automates and manages a cluster of Sync Gateway servers in the cloud that are  used to sync information between App Services and a Couchbase Capella Bucket.  Some documentation will need to be reviewed from the Sync Gateway documentation area of the docs while other information can be found in the Couchbase Capella App Services documentation. It's recommended that developers and architects understand Channels, Users, Roles, the Import Process, and the Sync Function that is used to set security on documents before attempting to configure Couchbase Capella App Services.
 
 - [Sync Gateway - Access Control Concepts](https://docs.couchbase.com/sync-gateway/current/access-control-concepts.html)
 - [Sync Gateway - Channels](https://docs.couchbase.com/sync-gateway/current/channels.html)
-- [Sync Gateway - Roles](https://docs.couchbase.com/sync-gateway/current/roles.html)
-- [Sync Gateway - Users](https://docs.couchbase.com/sync-gateway/current/users.html)
 - [Sync Gateway - Import Process](https://docs.couchbase.com/sync-gateway/current/import-processing.html)
 - [Sync Gateway - Sync Function](https://docs.couchbase.com/sync-gateway/current/sync-function.html)
 - [Sync Gateway - Delta Sync](https://docs.couchbase.com/sync-gateway/current/delta-sync.html)
 -------
 - [App Services - Create App Endpoint](https://docs.couchbase.com/cloud/app-services/deployment/creating-an-app-endpoint.html)
-- [App Services - Configuring Access Control and Data Validation](https://docs.couchbase.com/cloud/app-services/deployment/access-control-data-validation.html)
-- [App Services - Connecting](https://docs.couchbase.com/cloud/app-services/connect/connect-apps-to-endpoint.html)
 - [App Services - Adding Security with Channels](https://docs.couchbase.com/cloud/app-services/channels/channels.html)
+- [App Services - Configuring Access Control and Data Validation](https://docs.couchbase.com/cloud/app-services/deployment/access-control-data-validation.html)
 - [App Services - Creating Roles](https://docs.couchbase.com/cloud/app-services/user-management/create-app-role.html)
 - [App Services - Creating Users](https://docs.couchbase.com/cloud/app-services/user-management/create-user.html)
+- [App Services - Connecting](https://docs.couchbase.com/cloud/app-services/connect/connect-apps-to-endpoint.html)
 
-For large scale deployments using an Authentication Provider that supports OpenID Connect is a way easier way to manage users.
+For large scale deployments using an Authentication Provider that supports OpenID Connect is an easier way to manage users.
 - [App Services - Authentication Providers](https://docs.couchbase.com/cloud/app-services/user-management/set-up-authentication-provider.html)
 
 For applications that don't support OpenID Connect, REST APIs can be used to manage users, roles, and channels.  The REST API documentation can be found here:
 [Capella App Services - REST API Documentation](https://docs.couchbase.com/cloud/app-services/references/rest_api_admin.html#tag/Database-Security)
 
-### Configuration of the Replicator
-TODO
-
-## Troubleshooting 
+## Troubleshooting
 
 ### Logging
 
@@ -1057,34 +906,68 @@ The [Atlas documentation](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kot
 
 Couchbase Lite provides the ability to set logging levels and domains along with supporting Console, File, and Custom logging.
 
-Couchbase Lite Logging Documentation:
-- [Logging - Android Java](https://docs.couchbase.com/couchbase-lite/current/android/troubleshooting-logs.html)
-- [Logging - Android Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/troubleshooting-logs.html)
-- [Logging - Java](https://docs.couchbase.com/couchbase-lite/current/java/troubleshooting-logs.html)
-- [Logging - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/troubleshooting-logs.html)
-- [Logging - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/troubleshooting-logs.html)
-- [Logging - React Native](https://cbl-reactnative.dev/Troubleshooting/using-logs)
-- [Logging - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/troubleshooting-logs.html)
+#### More Information
+- [Couchbase Lite - Logging](https://docs.couchbase.com/couchbase-lite/current/android/troubleshooting-logs.html)
 
 ### Handling Data Conflicts
 Document conflicts can occur if multiple changes are made to the same version of a document by multiple peers in a distributed system. For Couchbase Mobile, this can be a Couchbase Lite or App Services Endpoint.
 
-More information on how to handle data conflicts can be found below:
-- [Android Java](https://docs.couchbase.com/couchbase-lite/current/android/conflict.html)
-- [Android Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/conflict.html)
-- [C](https://docs.couchbase.com/couchbase-lite/current/c/conflict.html)
-- [Java](https://docs.couchbase.com/couchbase-lite/current/java/conflict.html)
-- [.NET](https://docs.couchbase.com/couchbase-lite/current/csharp/conflict.html)
-- [Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/conflict.html)
-- [Swift](https://docs.couchbase.com/couchbase-lite/current/swift/conflict.html)
+#### More information
+- [Couchbase Lite - Data Conflicts](https://docs.couchbase.com/couchbase-lite/current/android/conflict.html)
 
-### Queries 
+### Queries
 The Couchbase Lite query API provides the Query Explain function that can be used to troubleshoot queries.
 
-- [Query Explain - Android Java](https://docs.couchbase.com/couchbase-lite/current/android/troubleshooting-queries.html)
-- [Query Explain - Android Kotlin](https://docs.couchbase.com/couchbase-lite/current/android/troubleshooting-queries.html)
-- [Query Explain - Java](https://docs.couchbase.com/couchbase-lite/current/java/troubleshooting-queries.html)
-- [Query Explain - .NET](https://docs.couchbase.com/couchbase-lite/current/csharp/troubleshooting-queries.html)
-- [Query Explain - Objective-C](https://docs.couchbase.com/couchbase-lite/current/objc/troubleshooting-queries.html)
-- [Query Explain - React Native](https://cbl-reactnative.dev/Troubleshooting/troubleshoot-queries)
-- [Query Explain - Swift](https://docs.couchbase.com/couchbase-lite/current/swift/troubleshooting-queries.html)
+#### More Information
+- [Couchbase Lite - Query Explain](https://docs.couchbase.com/couchbase-lite/current/android/troubleshooting-queries.html)
+
+## Known Limitations
+There are some APIs and features in Realm that do not exist today in the same way in the Couchbase Lite SDK.  Some guidance is provided below.
+
+### In-Memory Realm
+In Realm, you can open a realm that is stored entirely [in memory](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/open-and-close-a-realm/#open-an-in-memory-realm).  When this option is used, no realm file is created.
+
+The Couchbase Lite SDK does not directly offer a feature to keep documents solely in memory; instead, all documents must first be persisted to the database before replication can occur. For scenarios where a developer requires data to reside only in memory—without any disk storage—the optimal approach would be to utilize the App Services/Sync Gateway REST API. This API enables the retrieval of documents directly into memory, bypassing the need for disk-based storage while still allowing access to up-to-date data.
+
+### Add Initial Data to Realm
+Realm provides an [API](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/open-and-close-a-realm/#add-initial-data-to-realm) that facilitates the insertion of initial data into a Realm database at the time of its first opening.
+
+While there is no direct equivalent in Couchbase Lite, a similar outcome can be achieved through the use of a pre-built database. This approach enables the application to be loaded with data upfront, bypassing the need to sync data from App Services during the initial application launch. This could significantly reduce the wait time for users upon their first installation and startup of the application.
+
+>**NOTE**
+>
+>It is trivial to provide initial data, over the network, in the first sync of the Database collection(s) when the app launches. The only reason to provide an initial pre-built database is to save on network traffic, once.
+>
+
+#### More Information
+- [Couchbase Lite Pre-build Database](https://docs.couchbase.com/couchbase-lite/current/android/prebuilt-database.html)
+
+### Geospatial Types
+In the Atlas SDK, Geospatial data, or "geodata", specifies points and geometric objects on the Earth's surface.
+
+Couchbase Lite has no direct feature or support for Geospatial data types.  A developer would need to write custom code to handle any geospatial calculations or look into 3rd party packages.
+
+### User Management
+In the Realm SDK, it provides APIs in the SDK to [register new users](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/users/authenticate-users/).  Today the Couchbase Lite SDK provides no direct APIs to register users.  The Couchbase Capella Admin REST API does allow [creation of users](https://docs.couchbase.com/cloud/app-services/references/rest_api_admin.html#tag/Database-Security/operation/put_db-_user-name), however, you must [enable and configure](https://docs.couchbase.com/cloud/app-services/deployment/accessing-admin-apis.html) the Admin REST API before you can use it and setup security for it.
+
+For large scale deployments, it is highly recommended to integrate with an [OpenID (OIDC) Authentication Provider](https://docs.couchbase.com/cloud/app-services/user-management/set-up-authentication-provider.html#openid-connect-oidc).
+
+### User Authentication
+In the Realm SDK, it provides an SDK to [authenticate users](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/users/authenticate-users/#log-in-a-user).  The API returns a User object that gives you information about the user.
+
+In Couchbase Mobile, there are different types of [client authentication](https://docs.couchbase.com/couchbase-lite/current/android/replication.html#lbl-client-auth) supported for the Replicator, but it doesn't return a user object, and you would have to check the [status of replication](https://docs.couchbase.com/couchbase-lite/current/android/replication.html#lbl-repl-status), specifically check the [getError](https://docs.couchbase.com/mobile/3.2.0/couchbase-lite-android/com/couchbase/lite/ReplicatorStatus.html#getError) function to see if you have issues with authentication.
+
+### Migration of Data
+There are several tools that can be used to migrate data from MongoDb Atlas to Couchbase Capella, but a developer needs to understand there data to understand any data transformations or other processes needed when exporting the data from MongoDb Atlas to Couchbase Capella.
+
+#### JetBrains IDE Plugin
+The [JetBrains IDE Plugin](https://youtu.be/xCKhzo2jSv4?si=wHyjPra7F0XWccK2&t=270) for Couchbase has a data import feature to allow developers to migrate data from MongoDb Atlas to Couchbase Capella a one-time job.  This is designed for developers to quickly move data for setting up a development environment.
+
+#### cbimport (Couchbase Import)
+[cbimport](https://docs.couchbase.com/server/current/tools/cbimport-json.html) is a command line tool that can be used to import information into Couchbase Capella from text files.
+
+#### Import Data from Capella UI
+Couchbase Capella's [Data Tools UI](https://docs.couchbase.com/cloud/clusters/data-service/import-data-documents.html) provides the ability to directly import data from text files.
+
+#### Import Data using Couchbase SDK
+The [Couchbase SDK's](https://docs.couchbase.com/home/sdk.html) provide APIs for [importing data](https://docs.couchbase.com/cloud/guides/import.html) directly into Capella, allowing developers to customize and transform data during the import process.
