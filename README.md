@@ -16,7 +16,7 @@ These documents aim to elucidate the distinct differences in SDK functionalities
 Realm only supports the [Java](https://www.mongodb.com/docs/atlas/device-sdks/sdk/java/#sdk-in-maintenance-mode) programming language for Android based applications.  If you are an Android developer, use the Android link under guidance.  The Couchbase Lite documentation provides a single location for both Java and Kotlin Android developers.
 
 ## Couchbase Lite Java support
-Couchbase Lite also supports the Java programming language for non-Android based applications via a separate SDK. You can find more information from the [documentation](https://docs.couchbase.com/couchbase-lite/current/java/gs-prereqs.html).  
+Couchbase Lite supports the Java programming language for non-Android based applications via a separate SDK. You can find more information from the [documentation](https://docs.couchbase.com/couchbase-lite/current/java/gs-prereqs.html).  
 
 ## Realm C++ Support
 The Atlas Device SDK supports the [C++ programming language](https://www.mongodb.com/docs/atlas/device-sdks/sdk/cpp/).   Couchbase Lite supports the [C programming language](https://docs.couchbase.com/couchbase-lite/current/c/gs-install.html).  
