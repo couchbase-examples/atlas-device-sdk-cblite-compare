@@ -773,8 +773,8 @@ val collection = database.getCollection("frogs", "animals")
 collection.getDocument("frogId::kermit")
     .let { 
         collection
-            .delete(it, 
-                    ConcurrencyControl.FAIL_ON_CONFLICT)
+            .purge(it)
+                    
     }
 ```
 

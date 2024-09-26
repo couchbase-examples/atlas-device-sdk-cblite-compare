@@ -212,40 +212,43 @@ Conversely, Couchbase Lite is a document-oriented database that leverages the in
 
 ### Writing Data
 In Realm, you write data in a transaction which is a block of code that can do multiple sub-transactions.  Either all the transactions succeed or they fail.   An example of this is below:
-```kotlin
+```csharp
+var testItem = new Item
+        {
+            Name = "Do this thing",
+            Status = ItemStatus.Open.ToString(),
+            Assignee = "Aimee"
+        };
+        
 // Open a write transaction
-realm.write {
-    // Instantiate a new unmanaged Frog object
-    val unmanagedFrog = Frog().apply {
-        name = "Kermit"
-        age = 42
-        owner = "Jim Henson"
-    }
-    assertFalse(unmanagedFrog.isManaged())
-    // Copy the object to realm to return a managed instance
-    val managedFrog = copyToRealm(unmanagedFrog)
-    assertTrue(managedFrog.isManaged())
-    // Work with the managed object ...
-}
+await realm.WriteAsync(() =>
+{
+    realm.Add(testItem);
+});
 ```
 In this code an object is created, then copied to the Realm.
 
 For individual objects, Couchbase Lite doesn’t take this approach.  Instead, Couchbase Lite uses its MutableDocument API to allow developers to create a document and then save it into a Collection.  Within Multiple Documents, you have a few different ways you can create one.  The standard approach is to write some code that takes your data and puts it into the Mutable Document using Key Value pairs:
-```kotlin
-val mutableDocument = MutableDocument()
-mutableDocument.setString("name", "Kermit")
-mutableDocument.setInt("age", 42)
-mutableDocument.setString("owner", "Jim Henson")
-collection.save(mutableDocument);
+```csharp
+var mutableDocument = new MutableDocument();
+mutableDocument.setString("Name", "Do this thing")
+mutableDocument.setString("Status", ItemStatus.Open.ToString()),
+mutableDocument.setString("Assignee", "Aimee")
+collection.Save(mutableDocument);
 ```
 
-Another way is to use serialization libraries to serialize down the object to JSON and then create the MutableDocument based on the JSON values.
+Another way is to use serialization libraries to serialize down the object to JSON and then create the MutableDocument based on the [JSON](https://docs.couchbase.com/mobile/3.2.0/couchbase-lite-net/api/Couchbase.Lite.MutableDocument.html#Couchbase_Lite_MutableDocument__ctor_System_String_System_String_) values.
 
-```kotlin
-val frog = Frog("Kermit", 42, "Jim Henson")
-val json = Json.encodeToString(frog)
-val mutableDocument = MutableDocument("doc-1", json)
-collection.save(mutableDocument);
+```csharp
+var testItem = new Item
+        {
+            Name = "Do this thing",
+            Status = ItemStatus.Open.ToString(),
+            Assignee = "Aimee"
+        };
+var json = JsonSerializer.Serialize(testItem);
+var mutableDocument = new MutableDocument("doc-1", json)
+collection.Save(mutableDocument);
 ```
 > **NOTE**
 > You will always take a performance and memory hit depending on device constraints when serializing and deserializing objects to and from JSON strings.  If performance is a concern, it's best to use the Key Value pair approach when creating documents in Couchbase Lite.
@@ -255,18 +258,20 @@ Couchbase Lite does provide a Batch API to write multiple documents at once.  At
 
 An example of a inBatch transaction in Couchbase Lite:
 
-```kotlin
-database.inBatch(UnitOfWork {
-    for (i in 0..9) {
-        val doc = MutableDocument()
-        doc.let {
-            it.setValue("type", "user")
-            it.setValue("name", "user $i")
-            it.setBoolean("admin", false)
+```csharp
+database.InBatch(() =>
+    {
+        for (var i = 0; i < 10; i++) 
+        {
+            using var mutableDoc = new MutableDocument();
+            mutableDoc.SetString("type", "user");
+            mutableDoc.SetString("name", $"user {i}");
+            mutableDoc.SetBoolean("admin", false);
+            collection.Save(mutableDoc);
+            Console.WriteLine($"Saved user document {mutableDoc.GetString("name")}");
         }
-        log("saved user document: ${doc.getString("name")}")
     }
-})
+);
 ```
 
 #### More Information
@@ -274,229 +279,48 @@ Couchbase Lite Document Batch API Documentation:
 - [Couchbase Lite - Batch Operations](https://docs.couchbase.com/couchbase-lite/current/csharp/document.html#batch-operations)
 
 ### Create an Embedded Object
-In Realm the user must take care when creating embedded objects and provides an API to achieve this:
-
-```kotlin
-realm.write {
-    // Instantiate a parent object with one embedded address
-    val contact = Contact().apply {
-        name = "Kermit"
-        address = EmbeddedAddress().apply {
-            propertyOwner = Contact().apply { name = "Mr. Frog" }
-            street = "123 Pond St"
-            country = EmbeddedCountry().apply { name = "United States" }
-        }
-    }
-    // Copy all objects to the realm to return managed instances
-    copyToRealm(contact)
-}
-```
 
 In Couchbase Lite, embedded objects are just embedded dictionaries which you can use KV or the JSON serialization method.  An example of KV:
-```kotlin
-val mdContact = MutableDictionary()
-mdContact.setString("name", "Mr. Frog")
+```csharp
+var mdContact = new MutableDictionary();
+mdContact.SetString("name", "Mr. Frog");
 
-val mdCountry = MutableDictionary()
-mdCountry.setString("name", "United States")
+var mdCountry = new MutableDictionary();
+mdCountry.SetString("name", "United States")
 
-val mdAddress = MutableDictionary()
-mdAddress.setDictionary("address", mdAddress)
-mdAddress.setString("street", "123 Pond St")
-mdAddress.setDictionary("country", mdCountry)
+val mdAddress = new MutableDictionary();
+mdAddress.SetDictionary("address", mdAddress);
+mdAddress.SetString("street", "123 Pond St");
+mdAddress.SetDictionary("country", mdCountry);
 
-val mutableDocument = MutableDocument()
-mutableDocument.setString("name", "Kermit")
-mutableDocument.setDictionary("address",  mdAddress)
-collection.save(mutableDocument)
+var mutableDocument = new MutableDocument();
+mutableDocument.SetString("name", "Kermit");
+mutableDocument.SetDictionary("address",  mdAddress);
+collection.Save(mutableDocument);
 ```
 
-An example of using the Kotlin Serialization library to serialize an object to JSON string and then create a MutableDocument based on the JSON string value:
-```kotlin
-val propertyOwnerContact = Contact("Mr. Frog")
-val country = Country("United States")
-val address = Address(propertyOwnerContact, "123 Pond St", country)
-val contact = Contact("Kermit", address)
-val json = Json.encodeToString(contact)
-val mutableDocument = MutableDocument("doc-1", json)
-collection.save(mutableDocument);
+An example of using the .NET Serialization to serialize an object to JSON string and then create a MutableDocument based on the JSON string value:
+```csharp
+var propertyOwnerContact = new Contact("Mr. Frog");
+var country = new Country("United States");
+var address = new Address(propertyOwnerContact, "123 Pond St", country);
+var contact = new Contact("Kermit", address);
+
+var json = JsonSerializer.Serialize(contact)
+val mutableDocument = new MutableDocument("doc-1", json)
+collection.Save(mutableDocument);
 ```
-
-### Create an Asymmetric Object
-In Realm, asymmetric objects are objects that are inserted using a special API so that they are not included in the realm. Instead, they are directly published to Atlas App Services.  The use case from the docs point of view is sensor type information for IoT data.
-
-```kotlin
-// Open a write transaction
-realm.write {
-    // Create a new asymmetric object
-    val weatherSensor = WeatherSensor().apply {
-        deviceId = "WX1278UIT"
-        temperatureInFarenheit = 6.7F
-        barometricPressureInHg = 29.65F
-        windSpeedInMph = 2
-    }
-    // Insert the object into the realm with the insert() extension method
-    insert(weatherSensor)
-// WeatherSensor object is inserted into the realm, then synced to the
-// App Services backend. You CANNOT access the object locally because it's
-// deleted from the local realm after sync is complete.
-}
-```
-Couchbase Lite does not offer a direct API for certain specific operations. Instead, alternatives such as configuring a replicator in PUSH-only mode are available which would only send documents saved to the database to Capella App Services without pulling new documents down to the database.
-
-```kotlin
-val replicatorConfig = ReplicatorConfigurationFactory.newConfig(
-      target = "your url to app services",
-      continuous = true,
-      type = ReplicatorType.PUSH 
-)
-```
-
-#### More Information
-- [Couchbase Lite - Replicator Sync Mode](https://docs.couchbase.com/couchbase-lite/current/csharp/replication.html#lbl-cfg-sync)
 
 Finally for short-lived data, a document could be created with an expiration time and then deleted from the database after the expiration time has passed.  This purge is NOT replicated to App Services.
 
-```kotlin
+```csharp
 // Purge the document one day from now
-let ttl = Calendar.current.date(
-        byAdding: .day, value: 1, to: Date())
-
-try collection.setDocumentExpiration
-    (id: "doc123", expiration: ttl)
+var ttl = DateTimeOffset.UtcNow.AddDays(1);
+collection.SetDocumentExpiration("doc123", ttl);
 ```
 
 #### More Information
 - [Couchbase Lite - Document Expiration](https://docs.couchbase.com/couchbase-lite/current/csharp/document.html#document-expiration)
-
-### Create Realm Properties
-Realm properties allow you to define [Realm-specific types](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/crud/create/#:~:text=Realm%2Dspecific%20types) to an object.
-
-Couchbase Lite features the MutableDocument API, which facilitates the mapping of fields to supported scalar types.
-
-- [Couchbase Lite - Document API](https://docs.couchbase.com/couchbase-lite/current/csharp/document.html)
-
-### Create a Relationship Property
-
-In the Atlas Device SDK, you can create a To-One or To-Many relationship between objects. An example of this:
-
-```kotlin
-// Pond class
-open class Pond : RealmObject {
-    @PrimaryKey
-    var _id: ObjectId = ObjectId()
-    var name: String = ""
-    var location: String = ""
-}
-
-// Frog class
-open class Frog : RealmObject {
-    @PrimaryKey
-    var _id: ObjectId = ObjectId()
-    var name: String = ""
-    var age: Int = 0
-    // To-One relationships
-    var favoritePond: Pond? = null
-    var bestFriend: Frog? = null
-}
-
-// ... application code here
-   
-// Create a Pond object
-val sunnyPond = Pond().apply {
-        _id = ObjectId()  // MongoDB generate ObjectId automatically
-        name = "Sunny Pond"
-        location = "Near the forest"
-}
-
-    // Create Frog objects
-val ribbit = Frog().apply {
-        _id = ObjectId()
-        name = "Ribbit"
-        age = 6
-}
-
-val freddy = Frog().apply {
-        _id = ObjectId()
-        name = "Freddy"
-        age = 5
-        favoritePond = sunnyPond // To-One relationship with a Pond object
-        bestFriend = ribbit      // To-One relationship with another Frog
-}
-```
-When this data is synced to MongoDb Atlas, it would look something similar to this:
-
-```json
-{
-  "_id": ObjectId("64f9..."),
-  "name": "Freddy",
-  "age": 5,
-  "favoritePond": {
-    "_id": ObjectId("64fa..."),
-    "name": "Sunny Pond",
-    "location": "Near the forest"
-  },
-  "bestFriend": {
-    "_id": ObjectId("64fb..."),
-    "name": "Ribbit",
-    "age": 6
-  }
-}
-```
-
-To achieve the same results in Couchbase Lite, a developer would just make embedded JSON object or use the Key Value pair approach with dictionaries.  An example using serialization with an embedded JSON object is below:
-
-```kotlin
-// Define serializable data classes
-@Serializable
-data class Pond(
-    val id: String = UUID.randomUUID().toString(),
-    val name: String = "",
-    val location: String = ""
-)
-
-@Serializable
-data class Frog(
-    val id: String = UUID.randomUUID().toString(),
-    val name: String = "",
-    val age: Int = 0,
-    val favoritePond: Pond? = null,
-    val bestFriend: Frog? = null
-)
-
-// ...
-// Save Frog as JSON to Couchbase Lite
-fun saveFrogToCollection(collection: Collection, frog: Frog) {
-    // Convert Frog object to JSON using Kotlinx.serialization
-    val frogJson = Json.encodeToString(frog)
-    // Convert JSON to a MutableDocument for Couchbase Lite
-    val document = MutableDocument(frog.id, frogJson)
-    // Save the document to Couchbase Lite
-    collection.save(document)
-}
-
-// Retrieve Frog from Couchbase Lite
-fun getFrogFromCollection(collection: Collection, frogId: String): Frog? {
-    // Fetch the document by its ID
-    val document = collection.getDocument(frogId) ?: return null
-    // Convert JSON back to Frog object using Kotlinx.serialization
-    val frogJson = document.toJSON()
-    return frogJson?.let { Json.decodeFromString<Frog>(it) }
-}
-
-//  ...
-// Create some Pond and Frog objects
-val sunnyPond = Pond(name = "Sunny Pond", location = "Near the forest")
-val ribbit = Frog(name = "Ribbit", age = 6)
-val freddy = Frog(name = "Freddy", age = 5, favoritePond = sunnyPond, bestFriend = ribbit)
-
-// Save Freddy to Couchbase Lite
-saveFrogToCollection(database, freddy)
-
-// Retrieve Freddy back from the database
-val retrievedFrog = getFrogFromCollection(database, freddy.id)
-println(retrievedFrog)
-```
 
 ### Summary
 
@@ -506,116 +330,51 @@ Couchbase Lite utilizes the Documents and Blobs API to facilitate the storage of
 
 ### Read Operations
 
-A read operation in Atlas Device SDK consists of querying database objects, then running the query when you are ready to access the results.  This is based on the [RealmQuery API](https://www.mongodb.com/docs/realm-sdks/kotlin/latest/library-base/io.realm.kotlin.query/-realm-query/index.html) and Realm Query Language (RQL).
+A read operation in Atlas Device SDK consists of querying database objects using LINQ.
 
 An example of a query:
-```kotlin
-// Pass the object type as <T> parameter and filter by property
-val findFrogs = realm.query<Frog>("age > 1")
-    // Chain another query filter
-    .query("owner == $0 AND name CONTAINS $1", "Jim Henson", "K")
-    // Sort results by property
-    .sort("age", Sort.ASCENDING)
-    // Run the query
-    .find()
-// ... work with the results
+```csharp
+var itemsContains = items.Where(i => i.Assignee.Contains("ami",
+     StringComparison.OrdinalIgnoreCase));
 ```
 
 Couchbase Lite can use the SQL++ query language to achieve the same results.  An example of using the Couchbase Lite Query API:
 
-```kotlin
- val sqlQuery = """
-        SELECT *
-        FROM scopeName.collectionName as Frog
-        WHERE age > 1
-        AND owner = "Jim Henson"
-        AND name LIKE "%K%"
-        ORDER BY age ASC
-    """.trimIndent()
+```csharp
+using var query = database.CreateQuery("SELECT * AS item FROM scopeName.collectionName WHERE Lower(item.Assignee) LIKE '%ami%'");
 
-// Create a query from the N1QL string
-val query = database.createQuery(sqlQuery)
+// Execute the query
+var results = query.Execute();
 
-// Execute the query and collect results
-val resultList = mutableListOf<Frog>()
-query.execute().forEach { result ->
-    val frogJson = result.getDictionary(0)?.toMap()?.let { Json.encodeToString(it) }
-      frogJson?.let {
-          val frog = Json.decodeFromString<Frog>(it)
-          resultList.add(frog)
-     }
+// Loop through all the results
+foreach (var result in results)
+{
+    // Access the document ID from the result
+    ... do something with the results
 }
 ```
 
+### Find a Specific Object by Primary Key
+In the Atlas Device SDK, you use the Find method to return an Object based on the primary key.
+
+```csharp
+var myProject = realm.Find<Project>(projectId);
+```
+
+In the Couchbase Lite SDK for .NET, you can use the Collection API to retrieve a document by its documentId.
+
+```csharp
+var json = collection.GetDocument(projectId).ToJson();
+var project = JsonSerializer.Deserialize<Project>(json);
+```
+
 ### Query All Objects of a Type
-In the Atlas SDK the query() function can be used to return all objects of a [specific type](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/crud/read/#query-all-objects-of-a-type).
+In the Atlas SDK, the **All** method can be used to return all objects of a [specific type](https://www.mongodb.com/docs/atlas/device-sdks/sdk/dotnet/crud/read/#query-all-objects-of-a-given-type).
 
 In Couchbase Lite the recommended approach would be to store documents by type of information into unique collections, thus you can just query a collection to get all the documents of that type.  For example, you could store all Frogs in a scope called animals and a collection called frogs, thus getting all frogs back from the database is a SQL query.
 
 ```sql
 SELECT * FROM animals.frogs as Frog
-```
-
-### Query a Single Object/Filter by Primary Key
-The first function on the query in the Atlas SDK can be used to return a single object of a specific type.
-
-```kotlin
-val querySingleFrog = realm.query<Frog>().first()
-val singleFrog = querySingleFrog.find()
-if (singleFrog != null) {
-    println("${singleFrog.name} is a frog.")
-} else {
-    println("No frogs found.")
-}
-```
-
-Atlas also supports filtering objects by the PRIMARY_KEY_VALUE.
-
-```kotlin
-val filterByPrimaryKey = realm.query<Frog>("_id == $0", PRIMARY_KEY_VALUE)
-val findPrimaryKey = filterByPrimaryKey.find().first()
-```
-
-In Couchbase Lite you have a few options for getting a single document of a given type back.  To start out  with, if you know the document ID of a given document, you can just call the collection’s document function to get the document by its ID.
-
-```kotlin
-val document = collection.getDocument(mutableDocument);
-```
-
-If a developer didn’t know the documentId, they could use the LIMIT keyword in SQL++ to get a single document back from a given collection.
-
-```sql
-SELECT * FROM animals.frogs as Frog LIMIT 1
-```
-
-### Filter By Embedded Object Property
-
-To filter embedded documents in Atlas, you use the [dot notation](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/crud/read/#filter-by-embedded-object-property).
-
-```kotlin
-// Use dot notation to access the embedded object properties as if it
-// were in a regular nested object
-val filterEmbeddedObjectProperty =
-    realm.query<Contact>("address.street == '123 Pond St'")
-// You can also access properties nested within the embedded object
-val queryNestedProperty = realm.query<Contact>()
-    .query("address.propertyOwner.name == $0", "Mr. Frog")
-```
-
-In SQL++, you can also use dot notation to query fields of a sub-document.
-
-```sql
-SELECT * FROM exampleScope.Contact as contact WHERE address.street = '123 Pond St'
-
-SELECT * FROM exampleScope.Contact as contact WHERE address.propertyOwner.name = 'Mr. Frog'
-```
-
-### Filter By RealmAny (Mixed) Property
-A [RealmAny (Mixed) property](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/crud/read/#filter-by-embedded-object-property) represents a polymorphic value that can hold any one of its supported data types at a particular moment.
-
-```kotlin 
-val filterByRealmAnyInt = realm.query<Frog>("favoriteThing.@type == 'int'")
-val findFrog = filterByRealmAnyInt.find().first()
 ```
 
 In Couchbase Lite, you can use [Type Check Functions](https://docs.couchbase.com/couchbase-lite/current/csharp/query-n1ql-mobile.html#lbl-func-typecheck) which can check a type and returns true if it matches and false if it doesn't match.
@@ -625,53 +384,35 @@ SELECT * FROM exampleScope.Frog as frog WHERE ISNUMBER(frog.favoriteThing)
 ```
 
 ### Filter by Full-Text Search (FTS)
-In the [Atlas Device SDK](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/crud/read/#filter-by-full-text-search--fts--property), you can filter any property that is annotated with the [@FullText](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/property-annotations/#std-label-kotlin-fts-index) annotation.
+In the [Atlas Device SDK](https://www.mongodb.com/docs/atlas/device-sdks/sdk/dotnet/crud/filter/#full-text-search), you can filter any property that is annotated with the [@FullText](https://www.mongodb.com/docs/atlas/device-sdks/sdk/dotnet/model-data/define-object-model/#std-label-dotnet-fts-indexes) annotation.
 
-```kotlin
-// Filter by FTS property value using 'TEXT'
-// Find all frogs with "green" in the physical description
-val onlyGreenFrogs =
-    realm.query<Frog>("physicalDescription TEXT $0", "green").find()
-// Find all frogs with "green" but not "small" in the physical description
-val onlyBigGreenFrogs =
-    realm.query<Frog>("physicalDescription TEXT $0", "green -small").find()
-// Find all frogs with "muppet-" and "rain-" in the physical description
-val muppetsInTheRain =
-    realm.query<Frog>("physicalDescription TEXT $0", "muppet* rain*").find()
+```csharp
+// Find all people with "scientist" and "Nobel" in their biography
+var scientists = realm.All<Person>()
+    .Where(p => QueryMethods.FullTextSearch(p.Biography, "scientist Nobel"));
 ```
 In Couchbase Lite, a Ful-Text Search index is created on a collection for the properties you would like to index.
 
 ```kotlin
-val collection = database.getCollection("frogs", "animals")
+val collection = database.getCollection("collectionName", "scopeName")
 
-collection.createIndex("idxFrogPhysicalDescription",
+collection.createIndex("idxPersonBiography",
   FullTextIndexConfigurationFactory.newConfig
-  ("physicalDescription")) 
+  ("Biography")) 
     
 ```
 Once the index is created you can use the SQL++ keyword MATCH OR RANK functions to query the collection using FTS
 
 ```sql
-SELECT * FROM animals.frogs as frog 
-WHERE MATCH(frog.physicalDescription, 'green')
+SELECT * FROM scopeName.collectionName as Person 
+WHERE MATCH(Person.Biography, 'scientist Nobel')
 ```
 
 #### More Information
 - [Couchbase Lite - Full-Text Search API](https://docs.couchbase.com/couchbase-lite/current/csharp/fts.html)
 
 ### Sort and Limit Results
-In the Atlas SDK, you can sort and limit results using the sort(), limit(), and distinct() functions.
-
-```kotlin
-val organizedWithMethods = realm.query<Frog>("owner == $0", "Jim Henson")
-    .sort("age", Sort.DESCENDING)
-    .distinct("name")
-    .limit(2)
-    .find()
-organizedWithMethods.forEach { frog ->
-    Log.v("Method sort: ${frog.name} is ${frog.age}")
-}
-```
+In the Atlas SDK, you can sort and limit results using [LINQ](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/introduction-to-linq-queries).
 
 In Couchbase Lite, you can use the SQL++ ORDER BY and LIMIT keywords to sort and limit results.
 
@@ -680,11 +421,6 @@ SELECT DISTINCT(*) FROM animals.frogs as frog WHERE frog.owner = 'Jim Henson' OR
 ```
 
 ### Aggregate Results
-The Atlas Device SDK uses  RQL aggregate operators, one of the following convenience methods, or a combination of both:
-- max()
-- min()
-- sum()
-- count()
 
 In Couchbase Lite, SQL++ provides a plethora of aggregate operators and functions.
 ##### More Information
@@ -692,7 +428,7 @@ In Couchbase Lite, SQL++ provides a plethora of aggregate operators and function
 
 ### Summary
 
-Couchbase Lite utilizes SQL++, an extension of the industry-standard SQL, to query information from its database, ensuring compatibility and ease of use with familiar syntax and robust capabilities. In contrast, the Atlas Device SDK relies on the Realm Query Language (RQL), a proprietary query language specific to Realm databases.
+Couchbase Lite utilizes SQL++, an extension of the industry-standard SQL, to query information from its database, ensuring compatibility and ease of use with familiar syntax and robust capabilities. In contrast, the Atlas Device SDK relies on LINQ or Realm Query Language (RQL) to query a Realm object store.
 
 ## Updating Realm Objects in Realm vs Couchbase Lite
 
@@ -702,14 +438,26 @@ Realm supports update and upsert operations on Realm objects and embedded object
 
 In Couchbase Lite updating a document is almost the same as workflow as creating a document.  You can use the MutableDocument API to update a document in a collection.  To update a document, you first retrieve the document from the collection, make the changes to the document, and then save the document back to the collection.
 
-```kotlin
-val collection = database.getCollection("frogs", "animals")
-collection.getDocument("frogId::kermit")
-    .toMutable()
-    ?.let { mutableDocument ->
-        mutableDocument.setString("name", "Kermit the Frog")
-        collection.save(mutableDocument)
-    }
+```csharp
+// Assuming 'database' is already an instance of 'Database'
+var collection = database.GetCollection("frogs", "animals");
+
+// Get the document and convert it to a mutable form
+var document = collection.GetDocument("frogId::kermit").ToMutable();
+
+if (document != null)
+{
+    // Modify the document
+    document.SetString("name", "Kermit the Frog");
+
+    // Save the document back to the collection
+    collection.Save(document);
+}
+else
+{
+    // Handle the case where the document does not exist
+    Console.WriteLine("Document not found.");
+}
 ```
 
 ### Updating many documents
@@ -722,42 +470,68 @@ However, it is important to recognize that Couchbase Mobile operates as part of 
 
 ### Deleting Realm Objects
 
-In Realm and the Atlas Device SDK you can choose to delete a single object, multiple objects, or all objects from the realm. After you delete an object, you can no longer access or modify it.
+In Realm and the Atlas Device SDK you can choose to [delete a single object](https://www.mongodb.com/docs/atlas/device-sdks/sdk/dotnet/crud/delete/#delete-an-object), multiple objects, or all objects from the realm. After you delete an object, you can no longer access or modify it.
 
-```kotlin
+```csharp
 // Open a write transaction
-realm.write {
-    // Query the Frog type and filter by primary key value
-  val frogToDelete: Frog = query<Frog>("_id == $0", PRIMARY_KEY_VALUE)
-                              .find()
-                              .first()
-    // Pass the query results to delete()
-  delete(frogToDelete)
-}
+realm.Write(() =>
+{
+    // Remove the instance from the realm.
+    realm.Remove(dog);
+    // Discard the reference.
+    dog = null;
+});
 ```
 
 In Couchbase Lite, the Collection's API provides a few different functions based on the developers need.  The first API is the Collection API delete document function.
 
-```kotlin
-val collection = database.getCollection("frogs", "animals")
-collection.getDocument("frogId::kermit")
-    .let { 
-        collection.delete(it)
-    }
+```csharp
+// Assuming 'database' is already an instance of 'Database'
+var collection = database.GetCollection("dog", "animals");
+
+// Get the document
+var document = collection.GetDocument("dogId::Fido");
+
+if (document != null)
+{
+    // Delete the document
+    collection.Delete(document);
+}
+else
+{
+    // Handle the case where the document does not exist
+    Console.WriteLine("Document not found.");
+}
 ```
 
 Optionally, when saving or deleting a document to the database you can pass in a concurrency control token. This is done by passing in the concurrency control token to the save or delete function.
 
-```kotlin
-val collection = database.getCollection("frogs", "animals")
-collection.getDocument("frogId::kermit")
-    .let { 
-        val didFailDelete = collection
-            .delete(it, 
-                    ConcurrencyControl.FAIL_ON_CONFLICT)
+```csharp
+// Assuming 'database' is already an instance of 'Database'
+var collection = database.GetCollection("dog", "animals");
+
+// Get the document
+var document = collection.GetDocument("dogId::Fido");
+if (document != null)
+{
+    try
+    {
+        // Delete the document with concurrency control
+        var didDelete = collection.Delete(document, ConcurrencyControl.FailOnConflict);
+        if (didDelete){
+            Console.WriteLine("Document successfully deleted.");
+        } else {
+            Console.WriteLine("Document did not deleted.");
+        } 
     }
+    catch (CouchbaseLiteException ex)
+    {
+        // Handle conflict or other errors during deletion
+        Console.WriteLine($"Error deleting document: {ex.Message}");
+    }
+}
 ```
-Note that when specifying the failOnConflict concurrency control, and conflict occurred, the delete operation will fail with 'false' value returned.
+Note that when specifying the FailOnConflict concurrency control, it will return true if the delete call succeeded and false if there was a conflict.
 
 When calling the delete function, that deletion will propagate to the server and to all the other devices that sync with that database.  Calling delete is actually identical to saving a document with a body that is empty except for a single property "_deleted" set to true.
 
@@ -765,17 +539,27 @@ When calling the delete function, that deletion will propagate to the server and
 
 Couchbase Lite also provides another API to remove a document from the database.  This API is called purge.  Purging a document is more extreme than calling the delete API: it actually deletes the document and all its metadata. There’s nothing left to indicate the document ever existed.  For this reason, though, calling purge doesn’t replicate.
 
-```kotlin
-val collection = database.getCollection("frogs", "animals")
-collection.getDocument("frogId::kermit")
-    .let { 
-        collection
-            .delete(it, 
-                    ConcurrencyControl.FAIL_ON_CONFLICT)
+```csharp
+// Assuming 'database' is already an instance of 'Database'
+var collection = database.GetCollection("frogs", "animals");
+
+// Get the document
+var document = collection.GetDocument("frogId::kermit");
+if (document != null)
+{
+    try
+    {
+        // Purge the document
+        collection.Purge(document);
+        Console.WriteLine("Document successfully purged.");
     }
+    catch (CouchbaseLiteException ex)
+    {
+        // Handle errors during purging, such as document not found
+        Console.WriteLine($"Error purging document: {ex.Message}");
+    }
+}
 ```
-
-
 ## Manging Realm Files vs Couchbase Lite Database
 
 ### Reduce File Size
@@ -784,8 +568,8 @@ Starting in version 1.6.0 of the Atlas Device SDK, realm automatically compacts 
 
 Couchbase Lite also provides the Database Maintenance API that can provide several functions, including a compact function that shrinks the database file by removing any empty pages, and deletes blobs that are no longer referenced by any documents.
 
-```kotlin
-database.performMaintenance(DatabaseMaintenance.COMPACT) 
+```csharp
+Database.PerformMaintenance(DatabaseMaintenance.Compact); 
 ```
 
 #### More Information
@@ -794,16 +578,14 @@ database.performMaintenance(DatabaseMaintenance.COMPACT)
 ### Delete a Realm File
 
 To safely delete a realm file while the app is running, you can use the Realm.deleteRealm() method. The following code demonstrates this:
-```kotlin
-// You must close a realm before deleting it
-realm.close()
-// Delete the realm
-Realm.deleteRealm(config)
+```csharp
+var config = new RealmConfiguration("FileWeThrowAway.realm");
+Realm.DeleteRealm(config);
 ```
 
 In Couchbase Lite, there is a function provided to delete a database.  Deleting a database will stop all replicators, live queries and all listeners attached to it. Although attempting to close a closed database is not an error, attempting to delete a closed database is.
-```kotlin
-database.delete()
+```csharp
+database.Delete();
 ```
 
 #### More Information
@@ -813,11 +595,11 @@ database.delete()
 
 ### Change Events
 
-In Realm, you can subscribe to changes on the following [events](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/react-to-changes/):
+In Realm, you can subscribe to changes on the following [events](https://www.mongodb.com/docs/atlas/device-sdks/sdk/dotnet/react-to-changes/):
 
-- [Query on collection](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/react-to-changes/#std-label-kotlin-query-change-listener)
-- [Realm object](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/react-to-changes/#std-label-kotlin-realm-object-change-listener)
-- [Realm collections](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/react-to-changes/#std-label-kotlin-realm-list-change-listener) (e.g list)
+- [Realm notifications](https://www.mongodb.com/docs/atlas/device-sdks/sdk/dotnet/react-to-changes/#std-label-dotnet-realm-notifications)
+- [Realm collections](https://www.mongodb.com/docs/atlas/device-sdks/sdk/dotnet/react-to-changes/#std-label-dotnet-collection-notifications) 
+- [Realm object](https://www.mongodb.com/docs/atlas/device-sdks/sdk/dotnet/react-to-changes/#std-label-dotnet-object-notifications)
 
 The Atlas Device SDK only provides notifications for objects nested up to four layers deep. If you need to react to changes in more deeply-nested objects.
 
@@ -836,29 +618,34 @@ Couchbase Lite offers a suite of change listener APIs that enable developers to 
 Each platform has a set of documentation that explains on how to configure App Services.
 
 **MongoDb Atlas**
-[App Services Connection Documentation](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/app-services/connect-to-app-services-backend/)
-[Managing Users](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/users/authenticate-users/)
+- [App Services Connection Documentation](https://www.mongodb.com/docs/atlas/device-sdks/sdk/dotnet/sync/configure-and-open-a-synced-realm/)
+- [Managing Users](https://www.mongodb.com/docs/atlas/device-sdks/sdk/dotnet/work-with-users/)
 
 **Couchbase Capella**
-[App Services Connection Documentation](https://docs.couchbase.com/cloud/app-services/deployment/creating-an-app-service.html)
-[Managing Users](https://docs.couchbase.com/cloud/app-services/user-management/create-user.html)
+- [App Services Connection Documentation](https://docs.couchbase.com/cloud/app-services/deployment/creating-an-app-service.html)
+- [Managing Users](https://docs.couchbase.com/cloud/app-services/user-management/create-user.html)
 
 Connecting to Capella App Services involves configuration of a replicator and then starting replication.  An example of a simple configuration can be found below:
 
-```kotlin
+```csharp
 // initialize the replicator configuration
-val repl = Replicator(
-    ReplicatorConfigurationFactory.newConfig(
-        target = URLEndpoint(URI("ws://localhost:4984/mydatabase")),
-        collections = mapOf(collections to null),
-        //  other config params as required . .
-        heartbeat = 150,
-        maxAttempts = 20,
-        maxAttemptWaitTime = 600
-    )
-)
-repl.start()
-thisReplicator = repl
+// Create the target endpoint
+var targetEndpoint = new URLEndpoint(new Uri("your app services URL"));
+
+// Create the replicator configuration
+var config = new ReplicatorConfiguration
+{
+    Target = targetEndpoint,
+    Heartbeat = TimeSpan.FromSeconds(150),
+    MaxAttempts = 20,
+    MaxAttemptWaitTime = TimeSpan.FromSeconds(600)
+};
+config.AddCollection(collection);
+config.Authenticator = new BasicAuthenticator("john", "pass");
+
+// Create and start the replicator
+var replicator = new Replicator(config);
+replicator.Start();
 ```
 #### More Information
 [Couchbase Lite - Replicator Configuration](https://docs.couchbase.com/couchbase-lite/current/csharp/replication.html#lbl-cfg-repl)
@@ -891,7 +678,7 @@ For applications that don't support OpenID Connect, REST APIs can be used to man
 
 ### Logging
 
-The [Atlas documentation](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/logging/) covers how to set log levels and custom logs to allow developers to troubleshoot errors.
+The [Atlas documentation](https://www.mongodb.com/docs/atlas/device-sdks/sdk/dotnet/logging/) covers how to set log levels and custom logs to allow developers to troubleshoot errors.
 
 Couchbase Lite provides the ability to set logging levels and domains along with supporting Console, File, and Custom logging.
 
@@ -914,20 +701,30 @@ The Couchbase Lite query API provides the Query Explain function that can be use
 There are some APIs and features in Realm that do not exist today in the same way in the Couchbase Lite SDK.  Some guidance is provided below.
 
 ### IAsymmetricObject
-[IAsymmetricObject](https://www.mongodb.com/docs/realm-sdks/dotnet/latest/reference/Realms.IAsymmetricObject.html) are unique to Realm and Atlas Device sync as a way to control insert-only documents.
+[IAsymmetricObject](https://www.mongodb.com/docs/realm-sdks/dotnet/latest/reference/Realms.IAsymmetricObject.html) are unique to Realm and Atlas Device sync and only sync unidirectional. The use case from the docs point of view is sensor type information for IoT data.
 
-In contrast to Asymmetric Object Types, all documents inserted into a Couchbase Lite database are just a JSON document.  When you retrieve a document from the Couchbase Lite Database using the Collection API and provide a documentId, it’s a Document object (immutable) until you convert it to a MutableDocument which would then allow you to make changes to it.
+Couchbase Lite does not offer a direct API for directly pushing data to Couchbase Capella without first writing it to disk. Instead, alternatives such as configuring a replicator in PUSH-only mode are available which would only send documents saved to the database to Capella App Services without pulling new documents down to the database.
 
-Couchbase Lite does provide a document purge API which in some use cases could be used to provide similar functionality to IAsymmetricObject interface depending on the use case and business rules required.
+```csharp
+var targetEndpoint = new URLEndpoint(new Uri("your url to app services"));
+var replicatorConfig = new ReplicatorConfiguration(targetEndpoint){
+      Continuous = true,
+      Type = ReplicatorType.Push
+};
+```
 
+This could be used with the Document purge API to provide similar functionality depending on the business rules and use case.
 
+#### More Information
+- [Couchbase Lite - Replicator Sync Mode](https://docs.couchbase.com/couchbase-lite/current/csharp/replication.html#lbl-cfg-sync)
+ 
 ### In-Memory Realm
-In Realm, you can open a realm that is stored entirely [in memory](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/open-and-close-a-realm/#open-an-in-memory-realm).  When this option is used, no realm file is created.
+In Realm, you can open a realm that is stored entirely [in memory](https://www.mongodb.com/docs/atlas/device-sdks/sdk/dotnet/realm-files/realms/#in-memory-realms).  When this option is used, no realm file is created.
 
 The Couchbase Lite SDK does not directly offer a feature to keep documents solely in memory; instead, all documents must first be persisted to the database before replication can occur. For scenarios where a developer requires data to reside only in memory—without any disk storage—the optimal approach would be to utilize the App Services/Sync Gateway REST API. This API enables the retrieval of documents directly into memory, bypassing the need for disk-based storage while still allowing access to up-to-date data.
 
 ### Add Initial Data to Realm
-Realm provides an [API](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/open-and-close-a-realm/#add-initial-data-to-realm) that facilitates the insertion of initial data into a Realm database at the time of its first opening.
+Realm provides an API that facilitates the insertion of initial data into a Realm database at the time of its first opening.
 
 While there is no direct equivalent in Couchbase Lite, a similar outcome can be achieved through the use of a pre-built database. This approach enables the application to be loaded with data upfront, bypassing the need to sync data from App Services during the initial application launch. This could significantly reduce the wait time for users upon their first installation and startup of the application.
 
@@ -945,12 +742,12 @@ In the Atlas SDK, Geospatial data, or "geodata", specifies points and geometric 
 Couchbase Lite has no direct feature or support for Geospatial data types.  A developer would need to write custom code to handle any geospatial calculations or look into 3rd party packages.
 
 ### User Management
-In the Realm SDK, it provides APIs in the SDK to [register new users](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/users/authenticate-users/).  Today the Couchbase Lite SDK provides no direct APIs to register users.  The Couchbase Capella Admin REST API does allow [creation of users](https://docs.couchbase.com/cloud/app-services/references/rest_api_admin.html#tag/Database-Security/operation/put_db-_user-name), however, you must [enable and configure](https://docs.couchbase.com/cloud/app-services/deployment/accessing-admin-apis.html) the Admin REST API before you can use it and setup security for it.
+In the Realm SDK, it provides APIs in the SDK to [register new users](https://www.mongodb.com/docs/atlas/device-sdks/sdk/dotnet/manage-users/create-and-delete-users/).  Today the Couchbase Lite SDK provides no direct APIs to register users.  The Couchbase Capella Admin REST API does allow [creation of users](https://docs.couchbase.com/cloud/app-services/references/rest_api_admin.html#tag/Database-Security/operation/put_db-_user-name), however, you must [enable and configure](https://docs.couchbase.com/cloud/app-services/deployment/accessing-admin-apis.html) the Admin REST API before you can use it and setup security for it.
 
 For large scale deployments, it is highly recommended to integrate with an [OpenID (OIDC) Authentication Provider](https://docs.couchbase.com/cloud/app-services/user-management/set-up-authentication-provider.html#openid-connect-oidc).
 
 ### User Authentication
-In the Realm SDK, it provides an SDK to [authenticate users](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/users/authenticate-users/#log-in-a-user).  The API returns a User object that gives you information about the user.
+In the Realm SDK, it provides an SDK to [authenticate users](https://www.mongodb.com/docs/atlas/device-sdks/sdk/dotnet/manage-users/authenticate/).  The API returns a User object that gives you information about the user.
 
 In Couchbase Mobile, there are different types of [client authentication](https://docs.couchbase.com/couchbase-lite/current/csharp/replication.html#lbl-client-auth) supported for the Replicator, but it doesn't return a user object, and you would have to check the [status of replication](https://docs.couchbase.com/couchbase-lite/current/csharp/replication.html#lbl-repl-status), specifically check the [Error](https://docs.couchbase.com/mobile/3.2.0/couchbase-lite-net/api/Couchbase.Lite.Sync.ReplicatorStatus.html#Couchbase_Lite_Sync_ReplicatorStatus_Error) property to see if you have issues with authentication.
 
