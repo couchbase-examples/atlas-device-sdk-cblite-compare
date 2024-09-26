@@ -25,35 +25,41 @@ The [JetBrains IDE Plugin for Rider](https://youtu.be/xCKhzo2jSv4?si=wHyjPra7F0X
 - [cblite Command Line Tool](https://github.com/couchbaselabs/couchbase-mobile-tools/blob/master/Documentation.md)
 
 ### Opening a Realm
-To open a realm, you must provide a [RealmConfiguration](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/open-and-close-a-realm/#open-a-realm) object that defines the details of the realm.  This configuration is passed to the *Realm.open* function.
+To open a realm, you must provide a [RealmConfiguration](https://www.mongodb.com/docs/realm-sdks/dotnet/latest/reference/Realms.RealmConfiguration.html#Realms_RealmConfiguration__ctor_System_String_) object that defines the details of the realm.  This configuration is passed to the *Realm.GetInstance* function.
 
-```kotlin
+```csharp
 // Create a realm configuration with configuration builder
 // and pass all optional arguments
-val config = RealmConfiguration.Builder(
-    schema = setOf(Frog::class, Person::class)
-)
-    .name("myRealmName.realm")
-    .directory("my-directory-path")
-    .encryptionKey(myEncryptionKey)
-    .build()
-// Open the realm with the configuration object
-val realm = Realm.open(config)
-Log.v("Successfully opened realm: ${realm.configuration.name}")
+var config = new RealmConfiguration(pathToDb + "my.realm")
+{
+    IsReadOnly = true,
+};
+Realm localRealm;
+try
+{
+    localRealm = Realm.GetInstance(config);
+}
+catch (RealmFileAccessErrorException ex)
+{
+    Console.WriteLine($@"Error creating or opening the
+    realm file. {ex.Message}");
+}
 // ... use the open realm ...
 ```
 
 ### Opening a Couchbase Lite Database
 To open a Couchbase Lite database or create a new database, you can provide a DatabaseConfiguration object that defines the directory and an encryption key used to secure the database.  This configuration is passed on to the Database API to open the database.
-```kotlin
-val db = Database(
-    "my-db",
-    DatabaseConfigurationFactory.newConfig(
-        encryptionKey = EncryptionKey("PASSWORD"),
-        directory = "my-directory-path"
-    )
-)
-Log.v("Successfully opened database: ${db.name}")
+
+```csharp
+// Create a new, or open an existing database with encryption enabled
+var config = new DatabaseConfiguration
+        {
+            // Or, derive a key yourself and pass a byte array of the proper size
+            Directory = pathToDb 
+            EncryptionKey = new EncryptionKey("password")
+        };
+
+using var database = new Database("mydb", config);
 ```
 
 #### More Information
@@ -70,16 +76,18 @@ As stated before, Couchbase Lite doesn’t need schema management or migration p
 #### More Information
 - [Couchbase Lite Database Maintenance API](https://docs.couchbase.com/couchbase-lite/current/csharp/database.html#lbl-db-util)
 
-### Close a Realm
-The Realm SDK provides a method to close a realm with the code [realm.close](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/open-and-close-a-realm/#close-a-realm).  Couchbase Lite’s SDK also provides a close function which will also validate that the replicator and change listeners are closed before closing the connection via the Couchbase Lite Database *close* function.
+### Scoping the Realm 
+The Realm SDK realm object [implements IDisposable](https://www.mongodb.com/docs/atlas/device-sdks/sdk/dotnet/realm-files/realms/#scoping-the-realm) interface to ensure native resources are freed up. 
+
+The Couchbase Lite .NET SDK provides a [close](https://docs.couchbase.com/couchbase-lite/current/csharp/database.html#close-database) function which will also validate that the replicator and change listeners are closed before closing the connection.  The [Database](https://docs.couchbase.com/mobile/3.2.0/couchbase-lite-net/api/Couchbase.Lite.Database.html) class also implements the IDisposable interface to ensure native resources are freed up. 
 
 ### Copying Data into a New Realm / Couchbase Lite Database Copy
-The [Realm.writeCopyTo](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/open-and-close-a-realm/#copy-data-into-a-new-realm) method allows developers to copy data from an existing realm to a new realm.  There are some rules to this which are well documented.
+The [WriteCopy](https://www.mongodb.com/docs/realm-sdks/dotnet/latest/reference/Realms.Realm.html#Realms_Realm_WriteCopy_Realms_RealmConfigurationBase_) method allows developers to copy data from an existing realm to a new realm.  There are some rules to this which are well documented.
 
-In Couchbase Lite there is a *Database.copy* function that can copy a database file to a new database file.
+In Couchbase Lite there is a [Database.Copy](https://docs.couchbase.com/mobile/3.2.0/couchbase-lite-net/api/Couchbase.Lite.Database.html#Couchbase_Lite_Database_Copy_System_String_System_String_Couchbase_Lite_DatabaseConfiguration_) function that can copy a database file to a new database file.
 
 > **NOTE**
-> You should NEVER copy a Couchbase Lite database outside using the Database.copy API as it will invalidate other apps checkpoints.
+> You should NEVER copy a Couchbase Lite database outside using the Database.Copy API as it will invalidate other apps checkpoints.
 >
 
 #### More Information
@@ -94,27 +102,21 @@ Both the Realm API and the Couchbase Lite Database API exhibit comparable functi
 
 ## Model Data/Object Store
 
-Realm relies on the developer to define "[Realm objects](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#realm-objects)" or objects that are uniquely named that they can interact with Atlas Device and Device synchronization.
+Realm relies on the developer to define [Realm objects](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#realm-objects) or objects that are uniquely named that they can interact with Atlas Device and Device synchronization.
 
 ### Realm Object Types
 
-| Name | Documentation| 
-|---|---|
-| RealmObject | [Docs](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#realm-objects)                     |
-| EmbeddedRealmObject | [Docs](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#define-an-embedded-object-type)    |
-| AsymmetricRealmObject | [Docs](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#define-an-asymmetric-object-type) |
+All Realm objects inherit from the interfaces listed below and must be declared as **partial** classes.
+
+| Name                   | Documentation| 
+|------------------------|---|
+| IRealmObject           | [Docs](https://www.mongodb.com/docs/realm-sdks/dotnet/latest/reference/Realms.IRealmObject.html)                     |
+| IEmbeddedRealmObject   | [Docs](https://www.mongodb.com/docs/realm-sdks/dotnet/latest/reference/Realms.IEmbeddedObject.html)    |
+| IAsymmetricRealmObject | [Docs](https://www.mongodb.com/docs/realm-sdks/dotnet/latest/reference/Realms.IAsymmetricObject.html) |
 
 Couchbase Lite is flexible in that all data is stored in the database as a JSON document using the Document API.  You can use SQL++ Queries to get information from the database OR you can query the database using a documentId which can be similarly thought of as Realms “ObjectId”.
 
-When you embed documents in Realm you use the [EmbeddedRealmObject](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#define-an-embedded-object-type), whereas in Couchbase Lite you can  think of embedded data as an embedded JSON document or dictionary.
-
-[Asymmetric Object Types](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#define-an-asymmetric-object-type) are unique to Realm and Atlas Device sync as a way to control insert-only documents.
-
-In contrast to Asymmetric Object Types, all documents inserted into a Couchbase Lite database are just a JSON document.  When you retrieve a document from the Couchbase Lite Database using the Collection API and provide a documentId, it’s a Document object (immutable) until you convert it to a MutableDocument which would then allow you to make changes to it.
-
-Couchbase Lite does provide a document purge API that is discussed later in this document which can be used to provide similar functionality to Asymmetric Object Types depending on the use case
-
-Couchbase Lite and App Service/Sync Gateway have a different [security model](https://docs.couchbase.com/sync-gateway/current/access-control-model.html) .  Document that should be synced are assigned to a [“channel”](https://docs.couchbase.com/sync-gateway/current/channels.html) and the [replication configuration](https://docs.couchbase.com/couchbase-lite/current/android/replication.html) to decide which documents in what scopes and collections should be synced vs stay internal to the local database on the device.  This is covered more in details later in the document.
+When you embed documents in Realm you use the [IEmbeddedObject](https://www.mongodb.com/docs/atlas/device-sdks/sdk/dotnet/model-data/data-types/embedded-objects/) interface, whereas in Couchbase Lite you can  think of embedded data as an embedded JSON document or dictionary.
 
 ### Collection Types
 
@@ -134,7 +136,7 @@ In using Realm and the Atlas Device SDK, developers must carefully plan their da
 Conversely, Couchbase Lite offers a flexible data handling approach. All information is stored as JSON documents in the database. This format allows developers to freely choose how they structure, write, and read their data. The flexibility of JSON documents enables a variety of patterns and structures to be implemented, adapting easily to the evolving needs of the application and reducing the need for extensive initial planning.
 
 ## Collections
-In Realm, objects are stored in collections based on the object type (all objects in a collection are of the same type) unless the developer is using the [Realm Unstructured](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/define-realm-object-model/#define-unstructured-data) data API (RealmAny).  Storing data in this way comes at a performance cost in Realm.
+In Realm, objects are stored in [collections](https://www.mongodb.com/docs/atlas/device-sdks/sdk/dotnet/model-data/data-types/collections/#working-wth-collections) based on the object type (all objects in a collection are of the same type). 
 
 Couchbase Lite supports Scopes and Collections for storing JSON documents.  A scope is a namespace that may contain up to 1,000 collections.  Collections are a group of JSON documents, whose contents can be different (schema doesn’t have to be the same).  Storing documents with different schemas in the same Collection comes at no performance loss in Couchbase Lite and SQL++ has keywords to help you query for documents that are missing a property(field).
 
@@ -142,9 +144,8 @@ Couchbase Lite supports Scopes and Collections for storing JSON documents.  A sc
 - [Couchbase Lite Scopes - Collections API](https://docs.couchbase.com/couchbase-lite/current/csharp/scopes-collections-manage.html)
 
 ### Supported Data Types/Data Modeling
-In Realm each platform the SDK supports as a given set of supported Data Types:
-- [Java](https://www.mongodb.com/docs/atlas/device-sdks/sdk/java/model-data/data-types/field-types/)
-- [Kotlin](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/supported-types/)
+In Realm each platform the SDK supports as a given set of supported Field Types:
+- [Field Types](https://www.mongodb.com/docs/atlas/device-sdks/sdk/dotnet/model-data/data-types/field-types/)
 
 In Couchbase Lite, Document API Data Types supported are scalar types regardless of the platform, language, or SDK:
 
@@ -167,7 +168,7 @@ On top of scalar types, Couchbase Lite Documents also supports
 
 ### ObjectId vs DocumentId
 
-Realm objects can use the [ObjectId](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/supported-types/#objectid) or [UUID](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/supported-types/#realmuuid) for unique identifiers for Realm objects.  The ObjectId is a 12-byte unique value that is [nullable](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/supported-types/#objectid), indexable, and used as a primary key.
+Realm objects can use the [ObjectId or Guid](https://www.mongodb.com/docs/atlas/device-sdks/sdk/dotnet/model-data/data-types/field-types/#guid-and-objectid-properties).  The ObjectId is a 12-byte unique value, indexable, and used as a primary key.
 
 In Couchbase Lite a [documentId](https://docs.couchbase.com/couchbase-lite/current/csharp/document.html#document-structure) can be any string value as long as it’s not null.  A document created without an ID will always have a randomly generated a GUID to be used for the documentId.
 
@@ -187,7 +188,7 @@ On the other hand, Couchbase Lite operates differently due to its use of JSON do
 
 
 ### Backlinks and Relationships
-In Realm, a [backlink](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/supported-types/#backlinks) defines an inverse, to-many relationship between objects, where backlinks cannot be null. Unlike MongoDB, which explicitly avoids using bridge tables or explicit joins for defining relationships, Realm utilizes its proprietary mechanisms.
+In Realm, a [backlink](https://www.mongodb.com/docs/atlas/device-sdks/sdk/dotnet/model-data/relationships/#inverse-relationship) defines an inverse, to-many relationship between objects, where backlinks cannot be null. Unlike MongoDB, which explicitly avoids using bridge tables or explicit joins for defining relationships, Realm utilizes its proprietary mechanisms.
 
 Couchbase Lite, on the other hand, offers two approaches for managing document relationships. Firstly, it allows for embedding documents directly within other documents, akin to the feature provided by the Atlas Device SDK via embedded dictionaries in a document. This method, while straightforward, may lead to the creation of large document sizes, which can be inefficient for certain operations. Alternatively, Couchbase Lite supports the use of document IDs to establish relationships between documents. This method involves storing a document ID within another document, effectively using it as a foreign key to facilitate joins.
 
@@ -197,7 +198,7 @@ To manage relationships between smaller documents or to ensure efficient queryin
 - [Couchbase Lite SQL++ JOIN](https://docs.couchbase.com/couchbase-lite/current/csharp/query-n1ql-mobile.html#lbl-join)
 
 ### Changes to Object Model (schema synchronization)
-Realms [documentation](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/schemas/change-an-object-model/) has a detailed explanation of when and when you don’t have to worry about schema changes that is out of the scope of this document.
+Realms [documentation](https://www.mongodb.com/docs/atlas/device-sdks/sdk/dotnet/model-data/change-an-object-model/) has a detailed explanation of when and when you don’t have to worry about schema changes that is out of the scope of this document.
 
 Couchbase Lite is a Documents based database, in which documents are stored in [JSON](https://docs.couchbase.com/couchbase-lite/current/csharp/document.html#lbl-json-data), so you never have to be concerned about schema changes.
 
@@ -205,8 +206,6 @@ Couchbase Lite is a Documents based database, in which documents are stored in [
 In both Realm and the Atlas Device SDK, considerable effort is dedicated to comprehensively understanding the data schema and meticulously defining the synchronization model for devices. This process is crucial for ensuring that the data structures are correctly aligned with the operational requirements and synchronization protocols.
 
 Conversely, Couchbase Lite is a document-oriented database that leverages the inherent flexibility of JSON documents. This flexibility significantly reduces the time required for schema definition, allowing developers to dynamically accommodate various data types. Consequently, any constraints or data type regulations can be efficiently managed within the application’s business logic layer, rather than at the database level. This approach not only simplifies initial setup but also enhances adaptability to evolving data requirements.
-
-
 
 ## Create & Write Data in Realm vs Couchbase Lite
 
@@ -912,6 +911,14 @@ The Couchbase Lite query API provides the Query Explain function that can be use
 
 ## Known Limitations
 There are some APIs and features in Realm that do not exist today in the same way in the Couchbase Lite SDK.  Some guidance is provided below.
+
+### IAsymmetricObject
+[IAsymmetricObject](https://www.mongodb.com/docs/realm-sdks/dotnet/latest/reference/Realms.IAsymmetricObject.html) are unique to Realm and Atlas Device sync as a way to control insert-only documents.
+
+In contrast to Asymmetric Object Types, all documents inserted into a Couchbase Lite database are just a JSON document.  When you retrieve a document from the Couchbase Lite Database using the Collection API and provide a documentId, it’s a Document object (immutable) until you convert it to a MutableDocument which would then allow you to make changes to it.
+
+Couchbase Lite does provide a document purge API which in some use cases could be used to provide similar functionality to IAsymmetricObject interface depending on the use case and business rules required.
+
 
 ### In-Memory Realm
 In Realm, you can open a realm that is stored entirely [in memory](https://www.mongodb.com/docs/atlas/device-sdks/sdk/kotlin/realm-database/open-and-close-a-realm/#open-an-in-memory-realm).  When this option is used, no realm file is created.
