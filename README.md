@@ -7,7 +7,6 @@ These documents aim to elucidate the distinct differences in SDK functionalities
 - [Android](android.md)
 - [.NET](dotnet.md)
 - [Objective-C](objectivec.md)
-- [React Native](reactnative.md)
 - [Swift](swift.md)
 
 ## Ream Java Support
