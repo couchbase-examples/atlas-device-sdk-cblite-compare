@@ -97,7 +97,7 @@ In Couchbase Lite a [documentId](https://docs.couchbase.com/couchbase-lite/curre
 ### Property Annotations
 In Realm, property annotations play a critical role in defining the schema of objects. These annotations specify how objects should be stored in the database, including details on which fields are indexed, thereby enhancing query performance and ensuring data integrity.
 
-On the other hand, Couchbase Lite operates differently due to its use of JSON documents for storage. Instead of using property annotations to define schemas and index fields directly within the objects, Couchbase Lite manages indexing through a separate Index API. This approach allows developers to create and manage indexes independently of the document storage API, providing flexibility in how data is indexed and retrieved without altering the document structure itself.
+On the other hand, Couchbase Lite operates differently due to its use of JSON documents for storage.  Couchbase Lite JSON documents are schemaless, and it manages indexing through a separate Index API. This approach allows developers to create and manage indexes independently of the document storage API, providing flexibility in how data is indexed and retrieved without altering the document structure itself.
 
 #### More Information
 - [Couchbase Lite Populating a Document](https://docs.couchbase.com/couchbase-lite/current/android/document.html#populate-a-document)

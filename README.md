@@ -23,6 +23,7 @@ The Atlas Device SDK supports the [C++ programming language](https://www.mongodb
 
 - [Realm C++ Platform Support](https://github.com/realm/realm-cpp?tab=readme-ov-file#getting-started)
 - [Couchbase Lite C Platform Support](https://docs.couchbase.com/couchbase-lite/current/c/gs-install.html#lbl-platforms)
+ 
 ## Support
 
 The documentation provided herein is offered “as-is” without any form of support. We do not guarantee the accuracy, reliability, or timeliness of the information contained within these documents. Users should be aware that the use of this documentation is at their own risk, and it is their responsibility to ensure that the information meets their specific requirements.
