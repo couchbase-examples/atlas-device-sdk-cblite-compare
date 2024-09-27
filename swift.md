@@ -47,7 +47,7 @@ To open a Couchbase Lite database or create a new database, you can provide a Da
 do {
     // Specify the path and encryption key for the database configuration
     let config = DatabaseConfiguration()
-    config.directory = pathToDb // Make sure to define 'pathToDb' as the directory path
+    config.directory = "mypath" // Make sure to define as the directory path you can write to
     config.encryptionKey = EncryptionKey.password("password")
 
     // Create a new, or open an existing database with the specified configuration
