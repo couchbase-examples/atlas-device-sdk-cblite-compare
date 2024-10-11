@@ -5,7 +5,11 @@ The Atlas Device SDK can be thought of as an on-device ORM that creates an “ob
 >
 >This document is designed for developers using Swift for building iOS and Mac applications.
 >
->
+
+## Example Conversion App
+
+An example app based on the Realm Todo Template app for SwiftUI has been converted and is availalbe on [GitHub](https://github.com/couchbaselabs/cbl-realm-template-app-swiftui-todo).  
+
 ## Configuring and Opening Realm vs Couchbase Lite Database
 
 ### Realm File
