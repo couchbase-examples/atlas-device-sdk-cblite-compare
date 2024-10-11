@@ -5,6 +5,9 @@ The Atlas Device SDK can be thought of as an on-device ORM that creates an “ob
 >
 >This document is designed for Android developers using the Kotlin or Java programming language to build Android applications.  The Atlas SDK links provided point to the Kotlin SDK specifically.  For Android developers using Java, the Atlas SDK documentation can be found [here](https://www.mongodb.com/docs/atlas/device-sdks/sdk/java/).
 >
+## Example Conversion App
+
+An example app based on the Realm Todo Template app for Android with JetPack Compose has been converted and is availalbe on [GitHub](https://github.com/couchbaselabs/cbl-realm-template-app-kotlin-todo).  
 
 ## Frozen Architecture
 
