@@ -10,6 +10,12 @@ These documents aim to elucidate the distinct differences in SDK functionalities
 - [Objective-C](objectivec.md)
 - [Swift](swift.md)
 
+## Conversion Apps
+A set of Apps from the [realm-template-apps](https://github.com/mongodb-university/realm-template-apps) repo have been converted to Couchbase Lite.  These are designed to help developers understand some of the challenges in the app conversion process.
+
+- .NET Maui - [Todo App Repo](https://github.com/couchbaselabs/cbl-template-app-maui-todo)
+- Android with Kotlin/Jetpack Compose - [Todo App Repo](https://github.com/couchbaselabs/cbl-realm-template-app-kotlin-todo)
+- SwiftUI for iOS/iPadOS/Mac - [ToDo App Repo](https://github.com/couchbaselabs/cbl-realm-template-app-swiftui-todo)
 
 ## Open Source Platforms 
 Couchbase Lite has open source community driven support for the following platforms:
@@ -36,7 +42,6 @@ Couchbase Lite currently doesn't support Node.js based applications.
 
 ## Web SDK
 Couchbase Lite currently doesn't support Web based applications.
-
 
  
 ## Support

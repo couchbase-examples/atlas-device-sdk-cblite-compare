@@ -299,7 +299,7 @@ do {
 }
 ```
 
-An example of using the .NET Serialization to serialize an object to JSON string and then create a MutableDocument based on the JSON string value:
+An example of using the Swift to serialize an object to JSON string and then create a MutableDocument based on the JSON string value:
 ```csharp
 let propertyOwnerContact = Contact("Mr. Frog")
 let country = Country(name: "United States")
